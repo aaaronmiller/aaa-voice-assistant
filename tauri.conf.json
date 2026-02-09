@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "Voice Assistant",
+  "version": "1.0.0",
+  "description": "Voice assistant with speech-to-text and conversational AI capabilities",
+  "authors": ["Your Name"],
+  "defaultWindowTitle": "Voice Assistant",
+  "icon": ["icons/32x32.png", "icons/128x128.png"],
+  "capabilities": ["capabilities/default.json"],
+  "compiler": {
+    "appTarget": "updater",
+    "resources": ["icons/*"]
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["updater"],
+    "identifier": "com.voice-assistant.app",
+    "shortDescription": "Voice Assistant",
+    "longDescription": "A cross-platform voice assistant with speech-to-text and AI capabilities",
+    "copyright": "Copyright © 2024 Your Name",
+    "category": "Utility"
+  },
+  "updater": {
+    "active": false
+  },
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devPath": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "distDir": "../dist"
+  },
+  "plugins": {
+    "shell": {
+      "allow": {
+        "open": true,
+        "execute": true
+      }
+    },
+    "clipboard-manager": {
+      "allow": {
+        "readText": true,
+        "writeText": true
+      }
+    },
+    "global-shortcut": {
+      "allow": {
+        "register": true,
+        "unregister": true,
+        "isRegistered": true
+      }
+    },
+    "notification": {
+      "allow": {
+        "sendNotification": true
+      }
+    }
+  }
+}

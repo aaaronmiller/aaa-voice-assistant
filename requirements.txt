@@ -1,0 +1,12 @@
+openwakeword
+pyaudio
+numpy
+keyboard
+pyperclip
+pystray
+Pillow
+requests
+assemblyai
+pyttsx3
+scikit-learn
+tflite-runtime

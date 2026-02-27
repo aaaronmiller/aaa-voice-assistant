@@ -173,20 +173,37 @@ class OpenAITTSProvider(TTSProvider):
             response = requests.post("https://api.openai.com/v1/audio/speech", headers=headers, json=data, timeout=30)
             response.raise_for_status()
 
+            # Play audio directly from response content
+            # OpenAI TTS returns MP3 by default. PyAudio handles raw PCM.
+            # Use pydub or similar if possible, or save to file and play with system command
+            # For simplicity, let's try writing to temp mp3 and playing with system
+
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_mp3:
                 temp_mp3.write(response.content)
                 temp_mp3_path = temp_mp3.name
+
+            # Use a system player or playsound?
+            # Cross platform playing is tricky without extra deps.
+            # Fallback: Just print "Played" if we can't play mp3 easily without ffmpeg
+
+            # Try to use OS default player or specific command
+            # On Linux: mpg123, aplay (wav only), etc.
+            # On Windows: start <file>
+            # On Mac: afplay
 
             import platform
             system = platform.system()
             if system == "Darwin":
                 subprocess.run(["afplay", temp_mp3_path])
             elif system == "Linux":
+                # Try mpg123 if available
                 subprocess.run(["mpg123", temp_mp3_path], stderr=subprocess.DEVNULL)
             elif system == "Windows":
                  os.startfile(temp_mp3_path)
                  time.sleep(len(text)/10) # Crude wait
 
+            # Cleanup
+            # os.remove(temp_mp3_path) # Deleting while playing might fail on Windows
             return True
 
         except Exception as e:

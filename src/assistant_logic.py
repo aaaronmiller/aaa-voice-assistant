@@ -110,7 +110,7 @@ class Assistant:
         p_name = self.config.get("persona", "default")
         persona = self.persona_manager.get_persona(p_name)
         print(f"Loaded persona: {persona['name']}")
-        self.overlay.update_status(f"Ready ({persona['name']})", "#888")
+        self.overlay.update_status(f"✨ Ready ({persona['name']})", "#AAA")
 
     def stop(self):
         self.running = False
@@ -140,7 +140,7 @@ class Assistant:
                     ww = self.wake_word_detector.detect(audio_chunk)
                     if ww:
                         print(f"Wake word detected: {ww}")
-                        self.overlay.update_status("Wake Word Detected!", "cyan")
+                        self.overlay.update_status("📢 Wake Word Detected!", "cyan")
                         # Start listening
                         self._toggle_listening(force_start=True)
 
@@ -176,7 +176,7 @@ class Assistant:
         with self.lock:
             if not self.recording_for_stt:
                 print("PTT Pressed - Recording...")
-                self.overlay.update_status("Recording...", "red")
+                self.overlay.update_status("🔴 Recording...", "red")
                 self.recording_for_stt = True
                 self.audio_buffer = []
 
@@ -185,7 +185,7 @@ class Assistant:
             was_recording = self.recording_for_stt
             if was_recording:
                 print("PTT Released - Transcribing...")
-                self.overlay.update_status("Processing...", "orange")
+                self.overlay.update_status("⚙️ Processing...", "orange")
                 self.recording_for_stt = False
 
         if was_recording:
@@ -203,7 +203,7 @@ class Assistant:
                     self.silence_start_time = None
                     print('\a')
                     print("Listening started (auto)...")
-                    self.overlay.update_status("Listening...", "green")
+                    self.overlay.update_status("👂 Listening...", "green")
             elif force_stop:
                 if self.listening:
                     self.listening = False
@@ -220,11 +220,11 @@ class Assistant:
                     self.silence_start_time = None
                     print('\a')
                     print("Listening started (manual)...")
-                    self.overlay.update_status("Listening...", "green")
+                    self.overlay.update_status("👂 Listening...", "green")
 
         if should_process:
             print("Listening stopped.")
-            self.overlay.update_status("Processing...", "orange")
+            self.overlay.update_status("⚙️ Processing...", "orange")
             # Process in separate thread to avoid blocking loop if possible,
             # but current structure calls it directly.
             # self._process_audio_buffer calls lock so it's safeish.
@@ -233,7 +233,7 @@ class Assistant:
     def _process_audio_buffer(self, mode="assistant"):
         with self.lock:
             if not self.audio_buffer:
-                self.overlay.update_status("Idle", "#888")
+                self.overlay.update_status("💤 Idle", "#AAA")
                 return
             full_audio = np.concatenate(self.audio_buffer)
             self.audio_buffer = []
@@ -243,7 +243,7 @@ class Assistant:
 
         if self.stt_provider:
             print("Transcribing...")
-            self.overlay.update_status("Transcribing...", "blue")
+            self.overlay.update_status("📝 Transcribing...", "blue")
             text = self.stt_provider.transcribe(full_audio)
             print(f"Transcribed: {text}")
 
@@ -256,14 +256,14 @@ class Assistant:
                 elif mode == "assistant":
                     self._handle_assistant_command(text)
             else:
-                self.overlay.update_status("Idle", "#888")
+                self.overlay.update_status("💤 Idle", "#AAA")
         else:
-            self.overlay.update_status("Idle", "#888")
+            self.overlay.update_status("💤 Idle", "#AAA")
 
     def _type_text(self, text):
         if self.config.get("privacy_mode", False):
             print("Privacy Mode enabled: Clipboard typing disabled.")
-            self.overlay.update_status("Privacy Mode Blocked Typing", "red")
+            self.overlay.update_status("🔒 Privacy Mode Blocked Typing", "red")
             return
 
         try:
@@ -272,12 +272,12 @@ class Assistant:
             keyboard.send('ctrl+v')
             time.sleep(0.1)
             pyperclip.copy(old_clipboard)
-            self.overlay.update_status("Typed!", "green")
+            self.overlay.update_status("⌨️ Typed!", "green")
             time.sleep(1)
-            self.overlay.update_status("Idle", "#888")
+            self.overlay.update_status("💤 Idle", "#AAA")
         except Exception as e:
             print(f"Error typing text: {e}")
-            self.overlay.update_status("Error Typing", "red")
+            self.overlay.update_status("❌ Error Typing", "red")
 
     def _handle_assistant_command(self, text):
         # Retrieve recent history for context
@@ -286,13 +286,13 @@ class Assistant:
         context_str = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history])
         full_prompt = f"Recent History:\n{context_str}\n\nUser: {text}"
 
-        self.overlay.update_status("Thinking...", "purple")
+        self.overlay.update_status("🧠 Thinking...", "purple")
         response_text = self.llm_service.process(full_prompt)
 
         # Add response to memory
         self.memory_store.add_message("assistant", response_text)
 
-        self.overlay.update_status("Speaking...", "yellow")
+        self.overlay.update_status("🗣️ Speaking...", "yellow")
         # Speak response
         self.tts_provider.speak(response_text)
-        self.overlay.update_status("Idle", "#888")
+        self.overlay.update_status("💤 Idle", "#AAA")

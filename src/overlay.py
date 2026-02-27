@@ -13,6 +13,7 @@ class OverlayWindow:
 
     def _create_window(self):
         self.root = tk.Tk()
+        self.root.title("AAA Voice Assistant Overlay") # Accessible title
         self.root.overrideredirect(True) # Frameless
         self.root.attributes("-topmost", True)
         self.root.attributes("-alpha", 0.7) # Slightly transparent

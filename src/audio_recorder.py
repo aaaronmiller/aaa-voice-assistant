@@ -39,7 +39,7 @@ class AudioRecorder:
         self.stream = None
         print("Audio stream stopped.")
 
-    def _callback(self, in_data, frame_count, time_info, status):
+    def _callback(self, in_data, _frame_count, _time_info, _status):
         if self.recording:
             audio_data = np.frombuffer(in_data, dtype=np.int16)
             self.audio_queue.put(audio_data)

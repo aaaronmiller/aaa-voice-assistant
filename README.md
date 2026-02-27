@@ -1,22 +1,14 @@
 # Windows Voice Assistant
 
-A hands-free voice assistant for Windows, featuring wake word detection, STT (Whisper.cpp optimized for Intel Arc), TTS (Inworld/System), and OpenClaw integration.
+A hands-free voice assistant for Windows, Linux, and Mac.
 
 ## Features
 
 - **Wake Word Detection**: Uses `openwakeword`.
-- **Speech-to-Text**: Supports `whisper.cpp` (OpenVINO optimized) and AssemblyAI.
-- **Text-to-Speech**: Supports Inworld AI (placeholder) and System TTS (`pyttsx3`).
-- **Hands-Free**: Listen loop and PTT support.
-- **System Tray**: Control wake word toggle and quit.
-- **OpenClaw Integration**: Can route commands to a local OpenClaw instance.
-
-## Prerequisites
-
-- Python 3.8+
-- [Intel OpenVINO Toolkit](https://docs.openvino.ai/latest/openvino_docs_install_guides_installing_openvino_windows.html) (for Arc GPU optimization)
-- CMake (for building whisper.cpp)
-- Git
+- **Speech-to-Text**: `whisper.cpp` (GPU optimized for NVIDIA, AMD, Intel OpenVINO, Apple Metal) and AssemblyAI.
+- **Text-to-Speech**: System TTS, Inworld AI, OpenAI TTS.
+- **LLM Backends**: API (OpenAI, Anthropic), CLI (Claude Code), OpenClaw (autonomous agent).
+- **Cross-Platform**: Windows, Linux, macOS.
 
 ## Installation
 
@@ -26,34 +18,28 @@ A hands-free voice assistant for Windows, featuring wake word detection, STT (Wh
     cd <repo_name>
     ```
 
-2.  **Install Python Dependencies**:
+2.  **Run Setup Wizard**:
     ```bash
-    pip install -r requirements.txt
+    python setup_assistant.py
     ```
-
-3.  **Build whisper.cpp with OpenVINO**:
-    Run the provided PowerShell script as Administrator (recommended):
-    ```powershell
-    .\setup_whisper_cpp.ps1
-    ```
-    This will clone `whisper.cpp`, download the base model, and build it with `-DWHISPER_OPENVINO=1`.
+    This script will:
+    - Install Python dependencies.
+    - Detect your GPU and build `whisper.cpp` with appropriate optimization.
+    - Offer to setup OpenClaw via Docker.
 
 ## Configuration
 
-Create a `config.json` file in the root directory to override defaults. Example:
+Use the CLI to manage configuration:
 
-```json
-{
-    "hotkey_ptt": "ctrl+space",
-    "hotkey_wake": "ctrl+alt+w",
-    "wake_word_enabled": true,
-    "stt_provider": "whisper_cpp",
-    "whisper_cpp_path": "whisper.cpp/build/Release/main.exe",
-    "whisper_cpp_model_path": "whisper.cpp/models/ggml-base.bin",
-    "assemblyai_api_key": "YOUR_KEY_HERE",
-    "tts_provider": "system",
-    "openclaw_url": "http://localhost:18789/v1/chat/completions"
-}
+```bash
+# Set OpenAI API Key
+python cli.py config api_keys.openai "sk-..."
+
+# Set LLM Backend to OpenClaw
+python cli.py config llm_backend openclaw
+
+# List TTS Voices
+python cli.py voice --list
 ```
 
 ## Usage
@@ -61,20 +47,23 @@ Create a `config.json` file in the root directory to override defaults. Example:
 Run the assistant:
 
 ```bash
+python cli.py run
+```
+Or directly:
+```bash
 python src/main.py
 ```
 
-- A system tray icon will appear.
-- Say "Hey Jarvis" (default model) to activate.
-- Or use `Ctrl+Space` (default) for Push-to-Talk.
-- Or use `Ctrl+Alt+W` to toggle listening manually.
+- **Hotkeys**:
+  - `Ctrl+Space`: Push-to-Talk (types text).
+  - `Ctrl+Alt+W`: Toggle listening (Voice Assistant mode).
 
 ## OpenClaw Integration
 
-To integrate with OpenClaw, ensure your OpenClaw instance is running and exposes an API endpoint compatible with the configuration (default `http://localhost:18789/v1/chat/completions`). The assistant sends the transcribed text as a user message.
+The setup script can help you install OpenClaw using Docker. Once running, configure the `openclaw_url` in `config.json` (default `http://localhost:18789/v1/chat/completions`).
 
 ## Troubleshooting
 
-- **Wake Word not working**: Ensure microphone permissions are granted and input device is correct.
-- **Whisper.cpp fails**: Check if `main.exe` exists in the configured path. If building failed, ensure OpenVINO environment variables are set (`setupvars.bat`).
-- **Hotkeys**: On Linux, running as root might be required for global hotkeys. On Windows, ensure no other app is blocking the keys.
+- **Build Errors**: Ensure you have CMake and the relevant GPU toolkit (CUDA, ROCm, OpenVINO) installed.
+- **Permission Errors**: On Linux, global hotkeys might require running as root or specific udev rules.
+- **Missing Dependencies**: On Linux, you may need `sudo apt-get install portaudio19-dev` for `pyaudio`.

@@ -5,14 +5,11 @@ import tempfile
 import wave
 import assemblyai as aai
 import json
+import requests
 
 class STTProvider(abc.ABC):
     @abc.abstractmethod
     def transcribe(self, audio_data, sample_rate=16000):
-        """
-        Transcribe audio data (numpy array or raw bytes).
-        Returns the transcribed text as a string.
-        """
         pass
 
 class WhisperCPPProvider(STTProvider):
@@ -26,7 +23,6 @@ class WhisperCPPProvider(STTProvider):
             print(f"Warning: whisper.cpp model not found at {self.model_path}")
 
     def transcribe(self, audio_data, sample_rate=16000):
-        # Save audio to temporary WAV file
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
             with wave.open(temp_wav.name, 'wb') as wav_file:
                 wav_file.setnchannels(1)
@@ -37,15 +33,12 @@ class WhisperCPPProvider(STTProvider):
             temp_wav_path = temp_wav.name
 
         try:
-            # Run whisper.cpp
-            # Command format: ./main -m models/ggml-base.bin -f input.wav -otxt
-            # We want the text output. Maybe -otxt is not needed if we capture stdout.
-            # Default output is to stdout with timestamps. -nt removes timestamps.
+            # -nt: no timestamp, -f: file
             cmd = [
                 self.executable_path,
                 "-m", self.model_path,
                 "-f", temp_wav_path,
-                "-nt" # No timestamps
+                "-nt"
             ]
 
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -60,12 +53,12 @@ class WhisperCPPProvider(STTProvider):
 
 class AssemblyAIProvider(STTProvider):
     def __init__(self, api_key):
+        if not api_key:
+            raise ValueError("AssemblyAI API key is required.")
         aai.settings.api_key = api_key
         self.transcriber = aai.Transcriber()
 
     def transcribe(self, audio_data, sample_rate=16000):
-        # Save audio to temporary WAV file (AssemblyAI can take file path or buffer)
-        # Using file path for simplicity and robustness
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
             with wave.open(temp_wav.name, 'wb') as wav_file:
                 wav_file.setnchannels(1)
@@ -86,3 +79,28 @@ class AssemblyAIProvider(STTProvider):
         finally:
              if os.path.exists(temp_wav_path):
                 os.remove(temp_wav_path)
+
+class OpenAIAPIProvider(STTProvider):
+    def __init__(self, api_key):
+        self.api_key = api_key
+
+    def transcribe(self, audio_data, sample_rate=16000):
+        # Implementation for OpenAI Whisper API
+        # Needs 'openai' package or requests
+        # Placeholder
+        print("Using OpenAI Whisper API (mock)...")
+        return "Mock Whisper API transcription."
+
+class FallbackSTTProvider(STTProvider):
+    def __init__(self, providers):
+        self.providers = providers
+
+    def transcribe(self, audio_data, sample_rate=16000):
+        for provider in self.providers:
+            try:
+                result = provider.transcribe(audio_data, sample_rate)
+                if result:
+                    return result
+            except Exception as e:
+                print(f"Provider failed: {e}")
+        return ""

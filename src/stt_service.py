@@ -1,127 +1,129 @@
 import abc
+import numpy as np
 import subprocess
 import os
-import tempfile
-import wave
-import assemblyai as aai
 import json
 import requests
+import io
+import wave
+import tempfile
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Optional dependencies
+try:
+    import assemblyai as aai
+except ImportError:
+    aai = None
+
 
 class STTProvider(abc.ABC):
     @abc.abstractmethod
-    def transcribe(self, audio_data, sample_rate=16000):
+    def transcribe(self, audio_data):
         pass
 
 class WhisperCPPProvider(STTProvider):
-    def __init__(self, executable_path, model_path):
-        self.executable_path = executable_path
+    def __init__(self, binary_path, model_path):
+        self.binary_path = binary_path
         self.model_path = model_path
 
-        if not os.path.exists(self.executable_path):
-            print(f"Warning: whisper.cpp executable not found at {self.executable_path}")
-        if not os.path.exists(self.model_path):
-            print(f"Warning: whisper.cpp model not found at {self.model_path}")
+    def transcribe(self, audio_data):
+        # audio_data: numpy array int16
+        # Whisper.cpp main expects a WAV file or similar.
 
-    def transcribe(self, audio_data, sample_rate=16000):
+        # Use tempfile for thread safety and cleanup
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
-            with wave.open(temp_wav.name, 'wb') as wav_file:
-                wav_file.setnchannels(1)
-                wav_file.setsampwidth(2) # 16-bit
-                wav_file.setframerate(sample_rate)
-                wav_file.writeframes(audio_data.tobytes())
-
-            temp_wav_path = temp_wav.name
+            with wave.open(temp_wav.name, "wb") as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(16000)
+                wf.writeframes(audio_data.tobytes())
+            temp_path = temp_wav.name
 
         try:
-            # -nt: no timestamp, -f: file
+            # -nt: no timestamp, just text
             cmd = [
-                self.executable_path,
+                self.binary_path,
                 "-m", self.model_path,
-                "-f", temp_wav_path,
+                "-f", temp_path,
                 "-nt"
             ]
 
+            # Run
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             return result.stdout.strip()
-
         except subprocess.CalledProcessError as e:
-            print(f"Error running whisper.cpp: {e}")
+            logger.error(f"Whisper Error: {e}")
             return ""
+        except FileNotFoundError:
+             logger.error("Whisper binary not found.")
+             return ""
         finally:
-            if os.path.exists(temp_wav_path):
-                os.remove(temp_wav_path)
+             if os.path.exists(temp_path):
+                 os.remove(temp_path)
 
 class AssemblyAIProvider(STTProvider):
     def __init__(self, api_key):
-        if not api_key:
-            raise ValueError("AssemblyAI API key is required.")
-        aai.settings.api_key = api_key
-        self.transcriber = aai.Transcriber()
+        if aai:
+            aai.settings.api_key = api_key
+        else:
+            logger.warning("AssemblyAI SDK not installed.")
+        self.transcriber = aai.Transcriber() if aai else None
 
-    def transcribe(self, audio_data, sample_rate=16000):
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
-            with wave.open(temp_wav.name, 'wb') as wav_file:
-                wav_file.setnchannels(1)
-                wav_file.setsampwidth(2)
-                wav_file.setframerate(sample_rate)
-                wav_file.writeframes(audio_data.tobytes())
-            temp_wav_path = temp_wav.name
+    def transcribe(self, audio_data):
+        if not self.transcriber:
+            return "AssemblyAI not available."
+
+        # AssemblyAI SDK usually takes file or stream
+        # Let's use buffer
+
+        # Convert numpy to bytes
+        buffer = io.BytesIO()
+        with wave.open(buffer, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(16000)
+            wf.writeframes(audio_data.tobytes())
+
+        buffer.seek(0)
 
         try:
-            transcript = self.transcriber.transcribe(temp_wav_path)
-            if transcript.status == aai.TranscriptStatus.error:
-                print(f"AssemblyAI Error: {transcript.error}")
-                return ""
+            transcript = self.transcriber.transcribe(buffer)
             return transcript.text
         except Exception as e:
-            print(f"AssemblyAI Exception: {e}")
+            logger.error(f"AssemblyAI Error: {e}")
             return ""
-        finally:
-             if os.path.exists(temp_wav_path):
-                os.remove(temp_wav_path)
 
 class OpenAIAPIProvider(STTProvider):
     def __init__(self, api_key):
         self.api_key = api_key
 
-    def transcribe(self, audio_data, sample_rate=16000):
-        # Implementation for OpenAI Whisper API
-        if not self.api_key:
-             print("OpenAI API key missing for STT.")
-             return ""
+    def transcribe(self, audio_data):
+        # https://api.openai.com/v1/audio/transcriptions
 
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
-            with wave.open(temp_wav.name, 'wb') as wav_file:
-                wav_file.setnchannels(1)
-                wav_file.setsampwidth(2)
-                wav_file.setframerate(sample_rate)
-                wav_file.writeframes(audio_data.tobytes())
-            temp_wav_path = temp_wav.name
+        buffer = io.BytesIO()
+        buffer.name = "audio.wav" # needs name for requests to guess mime
+        with wave.open(buffer, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(16000)
+            wf.writeframes(audio_data.tobytes())
+        buffer.seek(0)
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}"
+        }
+
+        files = {
+            "file": ("audio.wav", buffer, "audio/wav"),
+            "model": (None, "whisper-1")
+        }
 
         try:
-            headers = {"Authorization": f"Bearer {self.api_key}"}
-            with open(temp_wav_path, "rb") as audio_file:
-                files = {"file": audio_file, "model": (None, "whisper-1")}
-                response = requests.post("https://api.openai.com/v1/audio/transcriptions", headers=headers, files=files, timeout=30)
-                response.raise_for_status()
-                return response.json().get("text", "")
+            response = requests.post("https://api.openai.com/v1/audio/transcriptions", headers=headers, files=files, timeout=30)
+            response.raise_for_status()
+            return response.json()["text"]
         except Exception as e:
-            print(f"OpenAI STT Error: {e}")
+            logger.error(f"OpenAI STT Error: {e}")
             return ""
-        finally:
-            if os.path.exists(temp_wav_path):
-                os.remove(temp_wav_path)
-
-class FallbackSTTProvider(STTProvider):
-    def __init__(self, providers):
-        self.providers = providers
-
-    def transcribe(self, audio_data, sample_rate=16000):
-        for provider in self.providers:
-            try:
-                result = provider.transcribe(audio_data, sample_rate)
-                if result:
-                    return result
-            except Exception as e:
-                print(f"Provider failed: {e}")
-        return ""

@@ -1,4 +1,0 @@
-{"timestamp": "2026-02-27T06:36:07.649363", "session_id": "88cb378e-35a0-48f9-8285-b9533550061b", "role": "user", "content": "Hello world"}
-{"timestamp": "2026-02-27T06:36:07.649749", "session_id": "88cb378e-35a0-48f9-8285-b9533550061b", "role": "assistant", "content": "Hi there!"}
-{"timestamp": "2026-02-27T06:37:55.136244", "session_id": "ac251438-803e-45f1-99b5-73f98804e507", "role": "user", "content": "Hello world"}
-{"timestamp": "2026-02-27T06:37:55.136676", "session_id": "ac251438-803e-45f1-99b5-73f98804e507", "role": "assistant", "content": "Hi there!"}

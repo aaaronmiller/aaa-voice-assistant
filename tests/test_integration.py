@@ -9,6 +9,12 @@ import sys
 # Add path
 sys.path.append(os.path.abspath("src"))
 
+# Mock pyaudio before importing modules that rely on it
+sys.modules['pyaudio'] = MagicMock()
+sys.modules['openwakeword'] = MagicMock()
+sys.modules['openwakeword.model'] = MagicMock()
+sys.modules['assemblyai'] = MagicMock()
+
 class TestIntegration(unittest.TestCase):
 
     def test_pipeline(self):

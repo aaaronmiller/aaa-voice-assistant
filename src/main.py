@@ -9,37 +9,13 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from assistant_logic import Assistant
 from gui import TrayIcon
-
-def load_config():
-    # Load from config.json if exists, else defaults
-    default_config = {
-        "hotkey_ptt": "ctrl+space",
-        "hotkey_wake": "ctrl+alt+w",
-        "wake_word_enabled": True,
-        "stt_provider": "whisper_cpp",
-        "whisper_cpp_path": "whisper.cpp/build/Release/main.exe",
-        "whisper_cpp_model_path": "whisper.cpp/models/ggml-base.bin",
-        "assemblyai_api_key": "",
-        "tts_provider": "system",
-        "inworld_api_key": "",
-        "inworld_jwt_key": "",
-        "inworld_jwt_secret": "",
-        "openclaw_url": "http://localhost:18789/v1/chat/completions"
-    }
-
-    if os.path.exists("config.json"):
-        try:
-            with open("config.json", "r") as f:
-                user_config = json.load(f)
-                default_config.update(user_config)
-        except Exception as e:
-            print(f"Error loading config.json: {e}")
-
-    return default_config
+from config_manager import ConfigManager
 
 def main():
     print("Initializing AAA Voice Assistant...")
-    config = load_config()
+    # Use ConfigManager to load config properly
+    cm = ConfigManager()
+    config = cm.config
 
     assistant = Assistant(config)
 

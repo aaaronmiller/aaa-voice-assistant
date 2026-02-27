@@ -1,29 +1,32 @@
 import threading
 import queue
 import time
-import keyboard
-import pyperclip
 import requests
 import json
 import numpy as np
+import logging
+from .logger import log_error
+
+# Lazy imports for hardware/optional dependencies
 try:
-    from .audio_recorder import AudioRecorder
-    from .wake_word import WakeWordDetector
-    from .stt_service import WhisperCPPProvider, AssemblyAIProvider, OpenAIAPIProvider
-    from .tts_service import InworldTTSProvider, SystemTTSProvider, OpenAITTSProvider
-    from .llm_service import LLMService
-    from .overlay import OverlayWindow
-    from .persona_manager import PersonaManager
-    from .memory_store import MemoryStore
+    import keyboard
 except ImportError:
-    from audio_recorder import AudioRecorder
-    from wake_word import WakeWordDetector
-    from stt_service import WhisperCPPProvider, AssemblyAIProvider, OpenAIAPIProvider
-    from tts_service import InworldTTSProvider, SystemTTSProvider, OpenAITTSProvider
-    from llm_service import LLMService
-    from overlay import OverlayWindow
-    from persona_manager import PersonaManager
-    from memory_store import MemoryStore
+    keyboard = None
+
+try:
+    import pyperclip
+except ImportError:
+    pyperclip = None
+
+from .wake_word import WakeWordDetector
+from .stt_service import WhisperCPPProvider, AssemblyAIProvider, OpenAIAPIProvider
+from .tts_service import InworldTTSProvider, SystemTTSProvider, OpenAITTSProvider
+from .llm_service import LLMService
+from .overlay import OverlayWindow, play_beep
+from .persona_manager import PersonaManager
+from .memory_store import MemoryStore
+
+logger = logging.getLogger(__name__)
 
 class Assistant:
     def __init__(self, config):
@@ -34,6 +37,14 @@ class Assistant:
         self.wake_word_enabled = config.get("wake_word_enabled", True)
         self.lock = threading.Lock()
 
+        # Audio Recorder - Lazy Import
+        try:
+            from .audio_recorder import AudioRecorder
+            self.audio_recorder = AudioRecorder()
+        except ImportError:
+            logger.error("AudioRecorder import failed. Assistant will be deaf.")
+            self.audio_recorder = None
+
         # VAD / Silence Detection
         self.silence_threshold = config.get("silence_threshold", 500) # RMS value, needs tuning
         self.silence_duration = config.get("silence_duration", 1.5) # Seconds of silence to stop
@@ -42,11 +53,8 @@ class Assistant:
         self.silence_start_time = None
 
         # Overlay
-        self.overlay = OverlayWindow()
+        self.overlay = OverlayWindow(font_size=config.get("overlay_font_size", 14))
         self.overlay.start()
-
-        # Audio
-        self.audio_recorder = AudioRecorder()
 
         # Persona & Memory
         self.persona_manager = PersonaManager()
@@ -56,7 +64,7 @@ class Assistant:
         try:
             self.wake_word_detector = WakeWordDetector()
         except Exception as e:
-            print(f"Wake Word Detector init failed: {e}")
+            logger.error(f"Wake Word Detector init failed: {e}")
             self.wake_word_detector = None
 
         # STT
@@ -72,7 +80,7 @@ class Assistant:
             self.stt_provider = OpenAIAPIProvider(config.get("api_keys", {}).get("openai"))
         else:
             self.stt_provider = None
-            print("No STT provider configured.")
+            logger.warning("No STT provider configured.")
 
         # TTS
         tts_type = config.get("tts_provider", "system")
@@ -91,20 +99,24 @@ class Assistant:
 
     def start(self):
         self.running = True
-        self.audio_recorder.start_stream()
+        if self.audio_recorder:
+            self.audio_recorder.start_stream()
 
         threading.Thread(target=self._wake_word_loop, daemon=True).start()
 
         try:
-            hotkey_ptt = self.config.get("hotkey_ptt", "ctrl+space")
-            keyboard.add_hotkey(hotkey_ptt, self._handle_ptt_press, suppress=True, trigger_on_release=False)
-            keyboard.on_release_key(hotkey_ptt.split('+')[-1], self._handle_ptt_release)
+            if keyboard:
+                hotkey_ptt = self.config.get("hotkey_ptt", "ctrl+space")
+                keyboard.add_hotkey(hotkey_ptt, self._handle_ptt_press, suppress=True, trigger_on_release=False)
+                keyboard.on_release_key(hotkey_ptt.split('+')[-1], self._handle_ptt_release)
 
-            hotkey_wake = self.config.get("hotkey_wake", "ctrl+alt+w")
-            keyboard.add_hotkey(hotkey_wake, self._toggle_listening)
-            print(f"Hotkeys registered: PTT={hotkey_ptt}, Wake={hotkey_wake}")
+                hotkey_wake = self.config.get("hotkey_wake", "ctrl+alt+w")
+                keyboard.add_hotkey(hotkey_wake, self._toggle_listening)
+                logger.info(f"Hotkeys registered: PTT={hotkey_ptt}, Wake={hotkey_wake}")
+            else:
+                logger.warning("Keyboard module not available. Hotkeys disabled.")
         except Exception as e:
-            print(f"Error registering hotkeys: {e}")
+            logger.error(f"Error registering hotkeys: {e}")
 
         # Load Persona
         p_name = self.config.get("persona", "default")
@@ -114,9 +126,10 @@ class Assistant:
 
     def stop(self):
         self.running = False
-        self.audio_recorder.stop_stream()
+        if self.audio_recorder:
+            self.audio_recorder.stop_stream()
         self.overlay.stop()
-        print("Assistant stopped.")
+        logger.info("Assistant stopped.")
 
     def _calculate_rms(self, audio_chunk):
         # audio_chunk is int16 numpy array
@@ -127,6 +140,10 @@ class Assistant:
 
     def _wake_word_loop(self):
         while self.running:
+            if not self.audio_recorder:
+                time.sleep(1)
+                continue
+
             audio_chunk = self.audio_recorder.get_audio()
             if audio_chunk is None:
                 continue
@@ -157,14 +174,14 @@ class Assistant:
                     if self.silence_start_time is None:
                         self.silence_start_time = current_time
                     elif current_time - self.silence_start_time > self.silence_duration:
-                        print("Silence detected, stopping recording.")
+                        logger.info("Silence detected, stopping recording.")
                         self._toggle_listening(force_stop=True)
                 else:
                     self.silence_start_time = None
 
                 # Max duration check
                 if self.speech_start_time and (current_time - self.speech_start_time > self.max_recording_duration):
-                     print("Max duration reached, stopping recording.")
+                     logger.info("Max duration reached, stopping recording.")
                      self._toggle_listening(force_stop=True)
 
             elif is_recording_ptt:
@@ -239,13 +256,13 @@ class Assistant:
             self.audio_buffer = []
 
         # Simple auditory feedback
-        print('\a')
+        play_beep()
 
         if self.stt_provider:
             print("Transcribing...")
             self.overlay.update_status("📝 Transcribing...", "blue")
             text = self.stt_provider.transcribe(full_audio)
-            print(f"Transcribed: {text}")
+            logger.info(f"Transcribed: {text}")
 
             if text:
                 # Add to memory
@@ -265,6 +282,10 @@ class Assistant:
             print("Privacy Mode enabled: Clipboard typing disabled.")
             self.overlay.update_status("🔒 Privacy Mode Blocked Typing", "red")
             return
+
+        if not pyperclip or not keyboard:
+             logger.warning("Clipboard/Keyboard typing not supported (libs missing).")
+             return
 
         try:
             old_clipboard = pyperclip.paste()

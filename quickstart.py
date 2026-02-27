@@ -11,6 +11,14 @@ import platform
 import shutil
 import time
 
+# Import setup logic directly to unify experience
+try:
+    from setup_assistant import main as run_setup_wizard
+except ImportError:
+    # If not in path, try adding current dir
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from setup_assistant import main as run_setup_wizard
+
 def check_command(cmd):
     return shutil.which(cmd) is not None
 
@@ -70,7 +78,8 @@ def main():
 
     if not check_command("cmake"):
         print("Warning: cmake not found. Whisper.cpp build might fail.")
-        input("Press Enter to continue anyway...")
+        print("Press Enter to continue anyway...")
+        input()
 
     # 3. Install System Dependencies (Linux/Mac)
     install_system_dependencies()
@@ -85,15 +94,19 @@ def main():
     # 4. Run Setup Assistant
     print("\n--- Running Setup Wizard ---")
     try:
-        subprocess.check_call([sys.executable, "setup_assistant.py"])
-    except subprocess.CalledProcessError:
-        print("Setup failed.")
+        run_setup_wizard()
+    except Exception as e:
+        print(f"Setup failed: {e}")
         sys.exit(1)
 
     # 5. Start Assistant
     print("\n--- Starting Assistant ---")
     try:
-        subprocess.check_call([sys.executable, "src/main.py"])
+        # Import main here to avoid import errors before setup
+        from src.main import main as run_assistant
+        run_assistant()
+    except ImportError as e:
+         print(f"Failed to import assistant: {e}")
     except KeyboardInterrupt:
         print("\nExiting.")
 

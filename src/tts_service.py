@@ -1,19 +1,57 @@
 import abc
 import requests
 import base64
-import pyaudio
-import pyttsx3
 import json
 import tempfile
 import os
 import wave
 import subprocess
 import time
+import platform
+
+# Optional PyAudio
+try:
+    import pyaudio
+except ImportError:
+    pyaudio = None
+
+# Optional pyttsx3
+try:
+    import pyttsx3
+except ImportError:
+    pyttsx3 = None
 
 class TTSProvider(abc.ABC):
     @abc.abstractmethod
     def speak(self, text):
         pass
+
+    def _play_audio_file(self, filepath):
+        """Helper to play audio file cross-platform."""
+        system = platform.system()
+        try:
+            if system == "Darwin":
+                subprocess.run(["afplay", filepath], check=True)
+            elif system == "Linux":
+                # Try aplay for wav, mpg123/cvlc for others if needed
+                if filepath.endswith(".wav"):
+                     subprocess.run(["aplay", filepath], check=True, stderr=subprocess.DEVNULL)
+                else:
+                     subprocess.run(["mpg123", filepath], check=True, stderr=subprocess.DEVNULL)
+            elif system == "Windows":
+                # winsound is built-in
+                import winsound
+                winsound.PlaySound(filepath, winsound.SND_FILENAME)
+        except (subprocess.CalledProcessError, FileNotFoundError, ImportError):
+             # Fallback: try opening with default player (non-blocking usually)
+             if system == "Windows":
+                 os.startfile(filepath)
+                 # We can't know when it finishes easily
+                 time.sleep(2)
+             elif system == "Linux":
+                 subprocess.run(["xdg-open", filepath])
+             elif system == "Darwin":
+                 subprocess.run(["open", filepath])
 
 class InworldTTSProvider(TTSProvider):
     def __init__(self, api_key, api_secret, voice_name="default"):
@@ -132,14 +170,20 @@ class InworldTTSProvider(TTSProvider):
 
 class SystemTTSProvider(TTSProvider):
     def __init__(self, voice_id=None):
-        self.engine = pyttsx3.init()
-        if voice_id:
-            try:
-                self.engine.setProperty('voice', voice_id)
-            except Exception as e:
-                print(f"Error setting system voice: {e}")
+        if pyttsx3:
+            self.engine = pyttsx3.init()
+            if voice_id:
+                try:
+                    self.engine.setProperty('voice', voice_id)
+                except Exception:
+                    pass
+        else:
+            self.engine = None
+            print("pyttsx3 not installed. System TTS disabled.")
 
     def speak(self, text):
+        if not self.engine:
+            return False
         try:
             self.engine.say(text)
             self.engine.runAndWait()
@@ -168,42 +212,23 @@ class OpenAITTSProvider(TTSProvider):
                 "input": text,
                 "voice": self.voice
             }
+            # Request mp3
             response = requests.post("https://api.openai.com/v1/audio/speech", headers=headers, json=data, timeout=30)
             response.raise_for_status()
-
-            # Play audio directly from response content
-            # OpenAI TTS returns MP3 by default. PyAudio handles raw PCM.
-            # Use pydub or similar if possible, or save to file and play with system command
-            # For simplicity, let's try writing to temp mp3 and playing with system
 
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_mp3:
                 temp_mp3.write(response.content)
                 temp_mp3_path = temp_mp3.name
 
-            # Use a system player or playsound?
-            # Cross platform playing is tricky without extra deps.
-            # Fallback: Just print "Played" if we can't play mp3 easily without ffmpeg
+            self._play_audio_file(temp_mp3_path)
 
-            # Try to use OS default player or specific command
-            # On Linux: mpg123, aplay (wav only), etc.
-            # On Windows: start <file>
-            # On Mac: afplay
+            # Cleanup if possible (might fail on Windows if player locks it)
+            try:
+                os.remove(temp_mp3_path)
+            except OSError:
+                pass
 
-            import platform
-            system = platform.system()
-            if system == "Darwin":
-                subprocess.run(["afplay", temp_mp3_path])
-            elif system == "Linux":
-                # Try mpg123 if available
-                subprocess.run(["mpg123", temp_mp3_path], stderr=subprocess.DEVNULL)
-            elif system == "Windows":
-                 os.startfile(temp_mp3_path)
-                 time.sleep(len(text)/10) # Crude wait
-
-            # Cleanup
-            # os.remove(temp_mp3_path) # Deleting while playing might fail on Windows
             return True
-
         except Exception as e:
             print(f"OpenAI TTS Error: {e}")
             return False

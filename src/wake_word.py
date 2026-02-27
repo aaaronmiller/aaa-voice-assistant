@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import logging
+import openwakeword
 
 try:
     from openwakeword.model import Model
@@ -13,7 +15,12 @@ class WakeWordDetector:
 
         # openwakeword downloads models automatically or uses path
         # models: "hey_jarvis", "alexa", etc.
-        self.model = Model(wakeword_models=["hey_jarvis"])
+        try:
+            self.model = Model(wakeword_models=["hey_jarvis"])
+        except Exception as e:
+            logging.error(f"Models not found or failed to load: {e}. Downloading...")
+            openwakeword.utils.download_models()
+            self.model = Model(wakeword_models=["hey_jarvis"])
 
     def detect(self, audio_chunk):
         # audio_chunk: int16 numpy array

@@ -33,15 +33,16 @@ class WhisperCPPProvider(STTProvider):
         # Whisper.cpp main expects a WAV file or similar.
 
         # Use tempfile for thread safety and cleanup
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
-            with wave.open(temp_wav.name, "wb") as wf:
-                wf.setnchannels(1)
-                wf.setsampwidth(2)
-                wf.setframerate(16000)
-                wf.writeframes(audio_data.tobytes())
-            temp_path = temp_wav.name
+        fd, temp_path = tempfile.mkstemp(suffix=".wav")
 
         try:
+            with os.fdopen(fd, "wb") as f:
+                with wave.open(f, "wb") as wf:
+                    wf.setnchannels(1)
+                    wf.setsampwidth(2)
+                    wf.setframerate(16000)
+                    wf.writeframes(audio_data.tobytes())
+
             # -nt: no timestamp, just text
             cmd = [
                 self.binary_path,

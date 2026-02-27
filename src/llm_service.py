@@ -3,7 +3,7 @@ import subprocess
 import requests
 import json
 import os
-import requests
+import time
 
 class LLMBackend(abc.ABC):
     @abc.abstractmethod
@@ -58,7 +58,6 @@ class APIBackend(LLMBackend):
                 ],
                 "max_tokens": 1024
             }
-            # Anthropic API format is slightly different
             response = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=data, timeout=30)
             response.raise_for_status()
             return response.json()['content'][0]['text']
@@ -72,34 +71,50 @@ class CLIBackend(LLMBackend):
     def generate(self, prompt, system_prompt=None):
         try:
             # Safer CLI execution: pass prompt via stdin to avoid shell injection
-            # command_template should be list of args e.g. ["claude", "-p"]
             if isinstance(self.command_template, str):
                 cmd = self.command_template.split()
             else:
                 cmd = self.command_template
 
+            # Ensure cmd is valid
+            if not cmd:
+                return "Error: Empty command template."
+
             # subprocess.run with input=prompt
-            result = subprocess.run(cmd, input=prompt, capture_output=True, text=True, check=True)
+            # timeout added to prevent hanging
+            result = subprocess.run(cmd, input=prompt, capture_output=True, text=True, check=True, timeout=60)
             return result.stdout.strip()
+        except subprocess.TimeoutExpired:
+            return "Error: CLI command timed out."
         except Exception as e:
             return f"Error executing CLI: {e}"
 
 class OpenClawBackend(LLMBackend):
     def __init__(self, url):
         self.url = url
+        self.history = [] # Maintain history for agentic context
 
     def generate(self, prompt, system_prompt=None):
         try:
+            # Build messages from history
+            messages = [{"role": "system", "content": system_prompt or "You are a helpful assistant."}]
+            messages.extend(self.history[-10:]) # Keep last 10 turns
+            messages.append({"role": "user", "content": prompt})
+
             payload = {
-                "model": "gpt-3.5-turbo", # OpenClaw might ignore model name or require specific one
-                "messages": [
-                    {"role": "system", "content": system_prompt or "You are a helpful assistant."},
-                    {"role": "user", "content": prompt}
-                ]
+                "model": "gpt-3.5-turbo", # OpenClaw might require this
+                "messages": messages
             }
             response = requests.post(self.url, json=payload, timeout=30)
             response.raise_for_status()
-            return response.json()['choices'][0]['message']['content']
+
+            content = response.json()['choices'][0]['message']['content']
+
+            # Update history
+            self.history.append({"role": "user", "content": prompt})
+            self.history.append({"role": "assistant", "content": content})
+
+            return content
         except Exception as e:
             return f"Error communicating with OpenClaw: {e}"
 
@@ -114,7 +129,7 @@ class LLMService:
         if backend_type == "openclaw":
             return OpenClawBackend(self.config.get("openclaw_url"))
         elif backend_type == "cli":
-            return CLIBackend(self.config.get("cli_command", "cat")) # Default to cat for testing
+            return CLIBackend(self.config.get("cli_command", "cat"))
         else:
             provider = self.config.get("api_provider", "openai")
             key = self.config.get("api_keys", {}).get(provider, "")

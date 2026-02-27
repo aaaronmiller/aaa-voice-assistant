@@ -147,6 +147,9 @@ class Assistant:
             full_audio = np.concatenate(self.audio_buffer)
             self.audio_buffer = []
 
+        # Simple auditory feedback
+        print('\a')
+
         if self.stt_provider:
             print("Transcribing...")
             text = self.stt_provider.transcribe(full_audio)
@@ -159,6 +162,10 @@ class Assistant:
                     self._handle_assistant_command(text)
 
     def _type_text(self, text):
+        if self.config.get("privacy_mode", False):
+            print("Privacy Mode enabled: Clipboard typing disabled.")
+            return
+
         try:
             old_clipboard = pyperclip.paste()
             pyperclip.copy(text)

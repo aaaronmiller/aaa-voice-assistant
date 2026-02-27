@@ -1,69 +1,129 @@
-# Windows Voice Assistant
+# Windows Voice Assistant (Cross-Platform)
 
-A hands-free voice assistant for Windows, Linux, and Mac.
+A robust, hands-free voice assistant designed for Windows, Linux, and macOS. It features wake word detection, optimized Speech-to-Text (using Whisper.cpp with GPU support), flexible Text-to-Speech options, and integration with powerful LLM backends including OpenClaw autonomous agents.
 
-## Features
+## 🚀 Features
 
-- **Wake Word Detection**: Uses `openwakeword`.
-- **Speech-to-Text**: `whisper.cpp` (GPU optimized for NVIDIA, AMD, Intel OpenVINO, Apple Metal) and AssemblyAI.
-- **Text-to-Speech**: System TTS, Inworld AI, OpenAI TTS.
-- **LLM Backends**: API (OpenAI, Anthropic), CLI (Claude Code), OpenClaw (autonomous agent).
-- **Cross-Platform**: Windows, Linux, macOS.
+*   **Wake Word Detection**: Low-latency detection using `openwakeword`.
+*   **Speech-to-Text (STT)**:
+    *   **Whisper.cpp**: Local, privacy-focused, and optimized for:
+        *   NVIDIA GPUs (CUDA)
+        *   AMD GPUs (ROCm)
+        *   Intel Arc/iGPUs (OpenVINO)
+        *   Apple Silicon (Metal)
+    *   **AssemblyAI**: Cloud-based fallback.
+*   **Text-to-Speech (TTS)**:
+    *   **System TTS**: Offline, low-latency using `pyttsx3`.
+    *   **Inworld AI**: High-quality emotional voices (API key required).
+    *   **OpenAI TTS**: High-quality neural voices.
+*   **LLM Integration**:
+    *   **OpenClaw**: Connect to a local autonomous agent instance.
+    *   **API**: OpenAI, Anthropic, etc.
+    *   **CLI**: Wrap command-line tools like `claude` or `gh` securely.
+*   **Cross-Platform**:
+    *   **Windows**: System Tray, Startup Registry.
+    *   **Linux**: `.desktop` autostart, `xclip` support.
+    *   **macOS**: LaunchAgent autostart.
+*   **Privacy Mode**: Disable clipboard interactions for sensitive workflows.
 
-## Installation
+## 🛠️ Prerequisites
 
-1.  **Clone the repository**:
-    ```bash
-    git clone <repo_url>
-    cd <repo_name>
-    ```
+*   **Python 3.8+**
+*   **Git**
+*   **CMake** (for building Whisper.cpp)
+*   **C++ Compiler** (Visual Studio / GCC / Clang)
 
-2.  **Run Setup Wizard**:
-    ```bash
-    python setup_assistant.py
-    ```
-    This script will:
-    - Install Python dependencies.
-    - Detect your GPU and build `whisper.cpp` with appropriate optimization.
-    - Offer to setup OpenClaw via Docker.
-
-## Configuration
-
-Use the CLI to manage configuration:
-
+### Linux Specifics
 ```bash
-# Set OpenAI API Key
+sudo apt-get install python3-dev portaudio19-dev xclip cmake build-essential
+```
+
+### macOS Specifics
+```bash
+brew install portaudio cmake
+```
+
+## ⚡ Quickstart
+
+1.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/your-repo/voice-assistant.git
+    cd voice-assistant
+    ```
+
+2.  **Run the Quickstart Script**:
+    ```bash
+    python quickstart.py
+    ```
+    This interactive script will:
+    *   Check system dependencies.
+    *   Detect your OS and GPU.
+    *   Build `whisper.cpp` with the best optimization flags.
+    *   Install Python requirements.
+    *   Start the assistant.
+
+## ⚙️ Configuration
+
+Manage all settings via the CLI tool.
+
+### API Keys
+```bash
 python cli.py config api_keys.openai "sk-..."
+python cli.py config api_keys.anthropic "sk-ant-..."
+```
 
-# Set LLM Backend to OpenClaw
+### Backend Selection
+```bash
+# Use OpenAI API
+python cli.py config llm_backend api
+python cli.py config api_provider openai
+
+# Use OpenClaw (Agent)
 python cli.py config llm_backend openclaw
+python cli.py config openclaw_url "http://localhost:18789/v1/chat/completions"
 
-# List TTS Voices
+# Use Local CLI Tool
+python cli.py config llm_backend cli
+python cli.py config cli_command "claude -p"
+```
+
+### Voice Settings
+```bash
+# List available system voices
 python cli.py voice --list
+
+# Set a specific voice ID
+python cli.py voice --set "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_DAVID_11.0"
 ```
 
-## Usage
-
-Run the assistant:
-
+### Startup
 ```bash
-python cli.py run
+# Enable start on boot
+python cli.py startup --enable
+
+# Disable start on boot
+python cli.py startup --disable
 ```
-Or directly:
-```bash
-python src/main.py
-```
 
-- **Hotkeys**:
-  - `Ctrl+Space`: Push-to-Talk (types text).
-  - `Ctrl+Alt+W`: Toggle listening (Voice Assistant mode).
+## 🖥️ Usage
 
-## OpenClaw Integration
+*   **Wake Word**: Say "Hey Jarvis" (default) to activate. The system will beep and start listening.
+*   **Push-to-Talk**: Hold `Ctrl+Space` (default) to record. Release to transcribe and type into the active window.
+*   **Manual Toggle**: Press `Ctrl+Alt+W` to toggle Voice Assistant mode manually.
 
-The setup script can help you install OpenClaw using Docker. Once running, configure the `openclaw_url` in `config.json` (default `http://localhost:18789/v1/chat/completions`).
+## 🔧 Troubleshooting
 
-## Troubleshooting
+*   **Build Failures**: Ensure CMake is in your PATH. On Windows, ensure you are running in a Developer Command Prompt if using MSVC.
+*   **Audio Issues**:
+    *   **Linux**: If you get ALSA errors, ensure `portaudio19-dev` is installed.
+    *   **Permissions**: Grant Microphone access in OS settings (especially macOS).
+*   **OpenClaw**: Ensure the Docker container is running and the port `18789` is exposed.
 
-- **Build Errors**: Ensure you have CMake and the relevant GPU toolkit (CUDA, ROCm, OpenVINO) installed.
-- **Permission Errors**: On Linux, global hotkeys might require running as root or specific udev rules.
-- **Missing Dependencies**: On Linux, you may need `sudo apt-get install portaudio19-dev` for `pyaudio`.
+## 🔒 Security
+
+*   **API Keys**: Keys are stored in `config.json` locally. Do not share this file.
+*   **Privacy Mode**: Enable via `config.json` ("privacy_mode": true) to prevent the assistant from reading/writing to your clipboard.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please submit PRs for new backends, voice providers, or OS-specific improvements.

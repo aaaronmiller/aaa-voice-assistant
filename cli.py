@@ -5,6 +5,7 @@ import json
 from src.config_manager import ConfigManager
 from src.main import main as run_assistant
 from setup_assistant import main as run_setup
+from src.startup_manager import StartupManager
 
 def list_voices():
     # Placeholder for TTS voice listing
@@ -43,6 +44,11 @@ def main():
     parser_voice.add_argument("--list", action="store_true", help="List available voices")
     parser_voice.add_argument("--set", help="Set voice ID")
 
+    # startup
+    parser_startup = subparsers.add_parser("startup", help="Manage startup settings")
+    parser_startup.add_argument("--enable", action="store_true", help="Enable start on boot")
+    parser_startup.add_argument("--disable", action="store_true", help="Disable start on boot")
+
     args = parser.parse_args()
 
     if args.command == "setup":
@@ -56,6 +62,13 @@ def main():
             list_voices()
         if args.set:
             set_config("voice_id", args.set)
+    elif args.command == "startup":
+        app_name = "VoiceAssistant"
+        script_path = os.path.abspath("src/main.py")
+        if args.enable:
+            StartupManager.enable_startup(app_name, script_path)
+        elif args.disable:
+            StartupManager.disable_startup(app_name)
     else:
         parser.print_help()
 

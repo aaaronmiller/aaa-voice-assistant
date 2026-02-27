@@ -100,7 +100,7 @@ def setup_openclaw():
                 os.chdir("..")
 
 def main():
-    print("Welcome to Voice Assistant Setup")
+    print("Welcome to AAA Voice Assistant Setup")
 
     # install_dependencies()
 

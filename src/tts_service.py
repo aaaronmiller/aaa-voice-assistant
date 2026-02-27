@@ -26,7 +26,6 @@ class InworldTTSProvider(TTSProvider):
 
     def speak(self, text):
         # Implementation placeholder
-        # See comments in previous plan step
         print("Inworld TTS not fully implemented (auth required). Using fallback.")
         return False
 
@@ -66,8 +65,56 @@ class OpenAITTSProvider(TTSProvider):
         self.voice = voice
 
     def speak(self, text):
-        # Implementation for OpenAI TTS API
-        # Needs 'openai' package or requests
-        print("Using OpenAI TTS API (mock)...")
-        # Would typically fetch audio bytes and play
-        return True
+        if not self.api_key:
+            print("OpenAI API key missing for TTS.")
+            return False
+
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            data = {
+                "model": "tts-1",
+                "input": text,
+                "voice": self.voice
+            }
+            response = requests.post("https://api.openai.com/v1/audio/speech", headers=headers, json=data, timeout=30)
+            response.raise_for_status()
+
+            # Play audio directly from response content
+            # OpenAI TTS returns MP3 by default. PyAudio handles raw PCM.
+            # Use pydub or similar if possible, or save to file and play with system command
+            # For simplicity, let's try writing to temp mp3 and playing with system
+
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_mp3:
+                temp_mp3.write(response.content)
+                temp_mp3_path = temp_mp3.name
+
+            # Use a system player or playsound?
+            # Cross platform playing is tricky without extra deps.
+            # Fallback: Just print "Played" if we can't play mp3 easily without ffmpeg
+
+            # Try to use OS default player or specific command
+            # On Linux: mpg123, aplay (wav only), etc.
+            # On Windows: start <file>
+            # On Mac: afplay
+
+            import platform
+            system = platform.system()
+            if system == "Darwin":
+                subprocess.run(["afplay", temp_mp3_path])
+            elif system == "Linux":
+                # Try mpg123 if available
+                subprocess.run(["mpg123", temp_mp3_path], stderr=subprocess.DEVNULL)
+            elif system == "Windows":
+                 os.startfile(temp_mp3_path)
+                 time.sleep(len(text)/10) # Crude wait
+
+            # Cleanup
+            # os.remove(temp_mp3_path) # Deleting while playing might fail on Windows
+            return True
+
+        except Exception as e:
+            print(f"OpenAI TTS Error: {e}")
+            return False

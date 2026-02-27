@@ -29,20 +29,47 @@ class MemoryStore:
             session_id = self.current_session_id
 
         history = []
+        block_size = 4096
+
         try:
-            with open(self.db_path, "r") as f:
-                # Read from end efficiently (tail) - hard in python without seeking
-                # For MVP, read all and filter
-                lines = f.readlines()
-                for line in reversed(lines):
-                    try:
-                        entry = json.loads(line)
-                        if entry.get("session_id") == session_id:
-                            history.insert(0, {"role": entry["role"], "content": entry["content"]})
-                            if len(history) >= limit:
-                                break
-                    except json.JSONDecodeError:
-                        continue
+            with open(self.db_path, "rb") as f:
+                f.seek(0, os.SEEK_END)
+                file_size = f.tell()
+                remaining_bytes = file_size
+                buffer = b""
+
+                while len(history) < limit and (remaining_bytes > 0 or buffer):
+                    if remaining_bytes > 0:
+                        read_size = min(block_size, remaining_bytes)
+                        f.seek(remaining_bytes - read_size)
+                        chunk = f.read(read_size)
+                        remaining_bytes -= read_size
+                        buffer = chunk + buffer
+
+                    lines = buffer.split(b'\n')
+
+                    # If we still have file to read, the first element might be partial
+                    if remaining_bytes > 0:
+                        buffer = lines.pop(0)
+                    else:
+                        buffer = b""
+
+                    # Process available complete lines in reverse order
+                    for line_bytes in reversed(lines):
+                        if not line_bytes.strip():
+                            continue
+
+                        try:
+                            line_str = line_bytes.decode('utf-8')
+                            entry = json.loads(line_str)
+
+                            if entry.get("session_id") == session_id:
+                                history.insert(0, {"role": entry["role"], "content": entry["content"]})
+                                if len(history) >= limit:
+                                    break
+                        except (json.JSONDecodeError, UnicodeDecodeError):
+                            continue
+
         except FileNotFoundError:
             return []
 

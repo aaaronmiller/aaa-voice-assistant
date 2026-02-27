@@ -29,7 +29,7 @@ class TrayIcon:
             pystray.MenuItem('Quit', self.on_quit)
         )
 
-        self.icon = pystray.Icon("VoiceAssistant", image, "Voice Assistant", menu)
+        self.icon = pystray.Icon("AAA Voice Assistant", image, "AAA Voice Assistant", menu)
 
     def on_toggle_wake_word(self, icon, item):
         # Toggle the attribute on assistant

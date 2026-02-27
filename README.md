@@ -1,6 +1,6 @@
-# Windows Voice Assistant (Cross-Platform)
+# AAA Voice Assistant
 
-A robust, hands-free voice assistant designed for Windows, Linux, and macOS. It features wake word detection, optimized Speech-to-Text (using Whisper.cpp with GPU support), flexible Text-to-Speech options, and integration with powerful LLM backends including OpenClaw autonomous agents.
+A robust, hands-free, cross-platform voice assistant designed for Windows, Linux, and macOS. It features wake word detection, optimized Speech-to-Text (using Whisper.cpp with GPU support), flexible Text-to-Speech options, and integration with powerful LLM backends including OpenClaw autonomous agents.
 
 ## 🚀 Features
 
@@ -12,14 +12,21 @@ A robust, hands-free voice assistant designed for Windows, Linux, and macOS. It 
         *   Intel Arc/iGPUs (OpenVINO)
         *   Apple Silicon (Metal)
     *   **AssemblyAI**: Cloud-based fallback.
+    *   **OpenAI Whisper API**: High accuracy cloud transcription.
 *   **Text-to-Speech (TTS)**:
     *   **System TTS**: Offline, low-latency using `pyttsx3`.
-    *   **Inworld AI**: High-quality emotional voices (API key required).
+    *   **Inworld AI**: High-quThisality emotional voices (API key required).
     *   **OpenAI TTS**: High-quality neural voices.
 *   **LLM Integration**:
     *   **OpenClaw**: Connect to a local autonomous agent instance.
     *   **API**: OpenAI, Anthropic, etc.
     *   **CLI**: Wrap command-line tools like `claude` or `gh` securely.
+*   **Intelligent Features**:
+    *   **Personas**: Switch between personalities (Pirate, Coder, etc.) defined in YAML.
+    *   **Memory**: Local JSONL database remembers conversation history.
+*   **User Interface**:
+    *   **Overlay**: Visual feedback for listening, processing, and error states.
+    *   **System Tray**: Quick access to toggle wake word or quit.
 *   **Cross-Platform**:
     *   **Windows**: System Tray, Startup Registry.
     *   **Linux**: `.desktop` autostart, `xclip` support.
@@ -47,8 +54,8 @@ brew install portaudio cmake
 
 1.  **Clone the Repository**:
     ```bash
-    git clone https://github.com/your-repo/voice-assistant.git
-    cd voice-assistant
+    git clone https://github.com/your-repo/aaa-voice-assistant.git
+    cd aaa-voice-assistant
     ```
 
 2.  **Run the Quickstart Script**:
@@ -87,29 +94,33 @@ python cli.py config llm_backend cli
 python cli.py config cli_command "claude -p"
 ```
 
-### Voice Settings
+### Personas
 ```bash
-# List available system voices
-python cli.py voice --list
+# List available personas
+python cli.py persona --list
 
-# Set a specific voice ID
-python cli.py voice --set "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_DAVID_11.0"
+# Switch to Pirate mode
+python cli.py persona --set pirate
 ```
 
-### Startup
+### System Tools
 ```bash
+# Calibrate Silence Threshold
+python cli.py calibrate
+
+# Check Configuration
+python cli.py check
+
 # Enable start on boot
 python cli.py startup --enable
-
-# Disable start on boot
-python cli.py startup --disable
 ```
 
 ## 🖥️ Usage
 
-*   **Wake Word**: Say "Hey Jarvis" (default) to activate. The system will beep and start listening.
+*   **Wake Word**: Say "Hey Jarvis" (default) to activate. The system will beep and show a "Listening..." overlay.
 *   **Push-to-Talk**: Hold `Ctrl+Space` (default) to record. Release to transcribe and type into the active window.
 *   **Manual Toggle**: Press `Ctrl+Alt+W` to toggle Voice Assistant mode manually.
+*   **Visual Overlay**: An unobtrusive window at the bottom of the screen indicates the current status (Idle, Listening, Transcribing, Speaking).
 
 ## 🔧 Troubleshooting
 

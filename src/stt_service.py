@@ -86,10 +86,31 @@ class OpenAIAPIProvider(STTProvider):
 
     def transcribe(self, audio_data, sample_rate=16000):
         # Implementation for OpenAI Whisper API
-        # Needs 'openai' package or requests
-        # Placeholder
-        print("Using OpenAI Whisper API (mock)...")
-        return "Mock Whisper API transcription."
+        if not self.api_key:
+             print("OpenAI API key missing for STT.")
+             return ""
+
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
+            with wave.open(temp_wav.name, 'wb') as wav_file:
+                wav_file.setnchannels(1)
+                wav_file.setsampwidth(2)
+                wav_file.setframerate(sample_rate)
+                wav_file.writeframes(audio_data.tobytes())
+            temp_wav_path = temp_wav.name
+
+        try:
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            with open(temp_wav_path, "rb") as audio_file:
+                files = {"file": audio_file, "model": (None, "whisper-1")}
+                response = requests.post("https://api.openai.com/v1/audio/transcriptions", headers=headers, files=files, timeout=30)
+                response.raise_for_status()
+                return response.json().get("text", "")
+        except Exception as e:
+            print(f"OpenAI STT Error: {e}")
+            return ""
+        finally:
+            if os.path.exists(temp_wav_path):
+                os.remove(temp_wav_path)
 
 class FallbackSTTProvider(STTProvider):
     def __init__(self, providers):

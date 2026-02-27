@@ -9,6 +9,7 @@ import os
 import subprocess
 import platform
 import shutil
+import time
 
 def check_command(cmd):
     return shutil.which(cmd) is not None
@@ -55,7 +56,7 @@ def install_system_dependencies():
             print("Homebrew not found. Please install portaudio manually if PyAudio fails.")
 
 def main():
-    print("=== Voice Assistant Quickstart ===")
+    print("=== AAA Voice Assistant Quickstart ===")
 
     # 1. Check Python version
     if sys.version_info < (3, 8):
@@ -73,6 +74,13 @@ def main():
 
     # 3. Install System Dependencies (Linux/Mac)
     install_system_dependencies()
+
+    # Warning for Linux users regarding 'keyboard'
+    if platform.system() == "Linux" and os.geteuid() != 0:
+        print("\n[WARNING] On Linux, the 'keyboard' library requires root privileges to intercept global hotkeys.")
+        print("You may need to run this script with 'sudo python quickstart.py' or configure udev rules.")
+        print("Continuing, but hotkeys might fail...\n")
+        time.sleep(2)
 
     # 4. Run Setup Assistant
     print("\n--- Running Setup Wizard ---")

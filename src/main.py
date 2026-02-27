@@ -38,7 +38,7 @@ def load_config():
     return default_config
 
 def main():
-    print("Initializing Voice Assistant...")
+    print("Initializing AAA Voice Assistant...")
     config = load_config()
 
     assistant = Assistant(config)

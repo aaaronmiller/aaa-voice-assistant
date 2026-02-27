@@ -13,11 +13,11 @@ class OverlayWindow:
         self.text_queue = []
 
     def _create_window(self):
-        try:
-            self.root = tk.Tk()
-            self.root.overrideredirect(True) # Frameless
-            self.root.attributes("-topmost", True)
-            self.root.attributes("-alpha", 0.7) # Slightly transparent
+        self.root = tk.Tk()
+        self.root.title("AAA Voice Assistant Overlay") # Accessible title
+        self.root.overrideredirect(True) # Frameless
+        self.root.attributes("-topmost", True)
+        self.root.attributes("-alpha", 0.7) # Slightly transparent
 
             screen_width = self.root.winfo_screenwidth()
             screen_height = self.root.winfo_screenheight()

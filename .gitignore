@@ -3,3 +3,4 @@ __pycache__/
 whisper.cpp/
 openwakeword_models/
 config.json
+assistant.log

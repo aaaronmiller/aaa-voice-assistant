@@ -4,6 +4,7 @@ import requests
 import json
 import os
 import time
+import shutil
 
 class LLMBackend(abc.ABC):
     @abc.abstractmethod
@@ -76,12 +77,22 @@ class CLIBackend(LLMBackend):
             else:
                 cmd = self.command_template
 
-            # Ensure cmd is valid
+            # Ensure cmd is valid and executable
             if not cmd:
                 return "Error: Empty command template."
 
+            # Security: Validate the executable path
+            exe = shutil.which(cmd[0])
+            if not exe:
+                 return f"Error: Command executable '{cmd[0]}' not found in PATH."
+
+            # Additional Security Check: Warn if running something that looks dangerous?
+            # For now, just logging or ensuring it exists is a first step.
+            # In a real scenario, we might have a whitelist of allowed commands.
+
             # subprocess.run with input=prompt
             # timeout added to prevent hanging
+            # shell=False is default and critical here
             result = subprocess.run(cmd, input=prompt, capture_output=True, text=True, check=True, timeout=60)
             return result.stdout.strip()
         except subprocess.TimeoutExpired:

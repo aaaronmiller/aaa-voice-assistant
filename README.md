@@ -12,6 +12,7 @@ A robust, hands-free, cross-platform voice assistant designed for Windows, Linux
         *   Intel Arc/iGPUs (OpenVINO)
         *   Apple Silicon (Metal)
     *   **AssemblyAI**: Cloud-based fallback.
+    *   **OpenAI Whisper API**: High accuracy cloud transcription.
 *   **Text-to-Speech (TTS)**:
     *   **System TTS**: Offline, low-latency using `pyttsx3`.
     *   **Inworld AI**: High-quality emotional voices (API key required).
@@ -23,7 +24,6 @@ A robust, hands-free, cross-platform voice assistant designed for Windows, Linux
 *   **Intelligent Features**:
     *   **Personas**: Switch between personalities (Pirate, Coder, etc.) defined in YAML.
     *   **Memory**: Local JSONL database remembers conversation history.
-    *   **Vision**: Experimental support for screenshot analysis.
 *   **User Interface**:
     *   **Overlay**: Visual feedback for listening, processing, and error states.
     *   **System Tray**: Quick access to toggle wake word or quit.
@@ -31,7 +31,6 @@ A robust, hands-free, cross-platform voice assistant designed for Windows, Linux
     *   **Windows**: System Tray, Startup Registry.
     *   **Linux**: `.desktop` autostart, `xclip` support.
     *   **macOS**: LaunchAgent autostart.
-*   **Extensibility**: Plugin system for adding custom providers.
 *   **Privacy Mode**: Disable clipboard interactions for sensitive workflows.
 
 ## 🛠️ Prerequisites
@@ -104,13 +103,16 @@ python cli.py persona --list
 python cli.py persona --set pirate
 ```
 
-### Startup
+### System Tools
 ```bash
+# Calibrate Silence Threshold
+python cli.py calibrate
+
+# Check Configuration
+python cli.py check
+
 # Enable start on boot
 python cli.py startup --enable
-
-# Disable start on boot
-python cli.py startup --disable
 ```
 
 ## 🖥️ Usage

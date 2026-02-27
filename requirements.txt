@@ -1,6 +1,4 @@
 pyyaml
-pytest
-Pillow
 requests
 pyaudio
 openwakeword
@@ -11,3 +9,4 @@ pyttsx3
 scikit-learn
 tflite-runtime
 numpy
+Pillow

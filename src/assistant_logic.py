@@ -13,10 +13,8 @@ try:
     from .tts_service import InworldTTSProvider, SystemTTSProvider, OpenAITTSProvider
     from .llm_service import LLMService
     from .overlay import OverlayWindow
-    from .plugin_manager import PluginManager
     from .persona_manager import PersonaManager
     from .memory_store import MemoryStore
-    from .vision_service import VisionService
 except ImportError:
     from audio_recorder import AudioRecorder
     from wake_word import WakeWordDetector
@@ -24,10 +22,8 @@ except ImportError:
     from tts_service import InworldTTSProvider, SystemTTSProvider, OpenAITTSProvider
     from llm_service import LLMService
     from overlay import OverlayWindow
-    from plugin_manager import PluginManager
     from persona_manager import PersonaManager
     from memory_store import MemoryStore
-    from vision_service import VisionService
 
 class Assistant:
     def __init__(self, config):
@@ -52,16 +48,9 @@ class Assistant:
         # Audio
         self.audio_recorder = AudioRecorder()
 
-        # Plugin Manager
-        self.plugin_manager = PluginManager()
-        self.plugin_manager.load_plugins()
-
         # Persona & Memory
         self.persona_manager = PersonaManager()
         self.memory_store = MemoryStore()
-
-        # Vision
-        self.vision_service = VisionService()
 
         # Wake Word
         try:

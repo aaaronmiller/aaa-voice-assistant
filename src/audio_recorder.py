@@ -2,6 +2,7 @@ import pyaudio
 import numpy as np
 import threading
 import queue
+import time
 
 class AudioRecorder:
     def __init__(self, chunk_size=1280, sample_rate=16000):
@@ -53,3 +54,37 @@ class AudioRecorder:
     def terminate(self):
         self.stop_stream()
         self.p.terminate()
+
+    def calibrate_silence(self, duration=2):
+        print("Calibrating silence threshold... Please remain silent.")
+
+        # Ensure stream is running
+        temp_stream = False
+        if self.stream is None:
+            self.start_stream()
+            temp_stream = True
+            time.sleep(0.5) # Warmup
+
+        rms_values = []
+        end_time = time.time() + duration
+
+        while time.time() < end_time:
+            try:
+                chunk = self.audio_queue.get(timeout=0.1)
+                data = chunk.astype(np.float32)
+                rms = np.sqrt(np.mean(data**2))
+                rms_values.append(rms)
+            except queue.Empty:
+                continue
+
+        if temp_stream:
+            self.stop_stream()
+
+        if not rms_values:
+            print("Calibration failed: No audio data.")
+            return 500 # Default
+
+        avg_rms = np.mean(rms_values)
+        threshold = max(avg_rms * 1.5, 300) # At least 300, or 1.5x ambient
+        print(f"Calibration complete. Ambient RMS: {avg_rms:.2f}, Threshold: {threshold:.2f}")
+        return threshold

@@ -57,10 +57,63 @@ def main():
     parser_persona.add_argument("--list", action="store_true", help="List personas")
     parser_persona.add_argument("--set", help="Set active persona")
 
+    # calibrate
+    parser_calibrate = subparsers.add_parser("calibrate", help="Calibrate silence threshold")
+
+    # check
+    parser_check = subparsers.add_parser("check", help="Verify configuration and services")
+
     args = parser.parse_args()
 
     if args.command == "setup":
         run_setup()
+    elif args.command == "calibrate":
+        try:
+            from src.audio_recorder import AudioRecorder
+            ar = AudioRecorder()
+            threshold = ar.calibrate_silence()
+            set_config("silence_threshold", threshold)
+            print("Calibration saved.")
+            ar.terminate()
+        except Exception as e:
+            print(f"Calibration failed: {e}")
+    elif args.command == "check":
+        print("Checking system configuration...")
+        config = ConfigManager()
+
+        # Check Audio
+        try:
+            import pyaudio
+            p = pyaudio.PyAudio()
+            if p.get_device_count() > 0:
+                print("[OK] Microphone detected.")
+            else:
+                print("[FAIL] No microphone devices found.")
+            p.terminate()
+        except Exception as e:
+            print(f"[FAIL] Audio check failed: {e}")
+
+        # Check API Keys
+        provider = config.get("api_provider", "openai")
+        key = config.get("api_keys", {}).get(provider, "")
+        if config.get("llm_backend") == "api":
+            if key:
+                print(f"[OK] API Key present for {provider}.")
+                # Optional: Make a test call? Maybe too expensive/slow for quick check.
+            else:
+                print(f"[FAIL] No API Key found for {provider}.")
+
+        # Check OpenClaw
+        if config.get("llm_backend") == "openclaw":
+            import requests
+            url = config.get("openclaw_url")
+            try:
+                requests.get(url, timeout=2)
+                # 404/405 is fine, means server is up. ConnectionError is bad.
+                print("[OK] OpenClaw server reachable.")
+            except Exception as e:
+                print(f"[FAIL] OpenClaw server unreachable: {e}")
+
     elif args.command == "run":
         run_assistant()
     elif args.command == "config":

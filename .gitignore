@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+whisper.cpp/
+openwakeword_models/
+config.json

@@ -5,12 +5,13 @@ import time
 import logging
 
 class OverlayWindow:
-    def __init__(self):
+    def __init__(self, font_size=14):
         self.root = None
         self.label = None
         self.thread = None
         self.active = False
         self.text_queue = []
+        self.font_size = font_size
 
     def _create_window(self):
         self.root = tk.Tk()

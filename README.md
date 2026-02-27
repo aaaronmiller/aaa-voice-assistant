@@ -20,6 +20,10 @@ A robust, hands-free, cross-platform voice assistant designed for Windows, Linux
     *   **OpenClaw**: Connect to a local autonomous agent instance.
     *   **API**: OpenAI, Anthropic, etc.
     *   **CLI**: Wrap command-line tools like `claude` or `gh` securely.
+*   **Intelligent Features**:
+    *   **Personas**: Switch between personalities (Pirate, Coder, etc.) defined in YAML.
+    *   **Memory**: Local JSONL database remembers conversation history.
+    *   **Vision**: Experimental support for screenshot analysis.
 *   **User Interface**:
     *   **Overlay**: Visual feedback for listening, processing, and error states.
     *   **System Tray**: Quick access to toggle wake word or quit.
@@ -91,13 +95,13 @@ python cli.py config llm_backend cli
 python cli.py config cli_command "claude -p"
 ```
 
-### Voice Settings
+### Personas
 ```bash
-# List available system voices
-python cli.py voice --list
+# List available personas
+python cli.py persona --list
 
-# Set a specific voice ID
-python cli.py voice --set "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_DAVID_11.0"
+# Switch to Pirate mode
+python cli.py persona --set pirate
 ```
 
 ### Startup

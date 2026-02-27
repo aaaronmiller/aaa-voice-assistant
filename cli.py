@@ -6,10 +6,9 @@ from src.config_manager import ConfigManager
 from src.main import main as run_assistant
 from setup_assistant import main as run_setup
 from src.startup_manager import StartupManager
+from src.persona_manager import PersonaManager
 
 def list_voices():
-    # Placeholder for TTS voice listing
-    # System TTS might provide getProperty('voices')
     try:
         import pyttsx3
         engine = pyttsx3.init()
@@ -23,6 +22,10 @@ def set_config(key, value):
     config = ConfigManager()
     config.set(key, value)
     print(f"Set {key} to {value}")
+
+def list_personas():
+    pm = PersonaManager()
+    print("Available Personas:", ", ".join(pm.list_personas()))
 
 def main():
     parser = argparse.ArgumentParser(description="AAA Voice Assistant CLI")
@@ -49,6 +52,11 @@ def main():
     parser_startup.add_argument("--enable", action="store_true", help="Enable start on boot")
     parser_startup.add_argument("--disable", action="store_true", help="Disable start on boot")
 
+    # persona
+    parser_persona = subparsers.add_parser("persona", help="Manage assistant persona")
+    parser_persona.add_argument("--list", action="store_true", help="List personas")
+    parser_persona.add_argument("--set", help="Set active persona")
+
     args = parser.parse_args()
 
     if args.command == "setup":
@@ -69,6 +77,11 @@ def main():
             StartupManager.enable_startup(app_name, script_path)
         elif args.disable:
             StartupManager.disable_startup(app_name)
+    elif args.command == "persona":
+        if args.list:
+            list_personas()
+        if args.set:
+            set_config("persona", args.set)
     else:
         parser.print_help()
 

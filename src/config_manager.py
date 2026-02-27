@@ -63,3 +63,4 @@ class ConfigManager:
     def save(self):
         with open(self.config_path, "w") as f:
             json.dump(self.config, f, indent=4)
+        os.chmod(self.config_path, 0o600)

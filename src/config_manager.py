@@ -61,12 +61,6 @@ class ConfigManager:
         self.save()
 
     def save(self):
-        try:
-            with open(self.config_path, "w") as f:
-                json.dump(self.config, f, indent=4)
-
-            # Set permissions to 600 (User Read/Write only) on POSIX
-            if platform.system() != "Windows":
-                os.chmod(self.config_path, 0o600)
-        except Exception as e:
-            print(f"Error saving config: {e}")
+        with open(self.config_path, "w") as f:
+            json.dump(self.config, f, indent=4)
+        os.chmod(self.config_path, 0o600)

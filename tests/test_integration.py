@@ -8,6 +8,12 @@ import numpy as np
 # Add path
 sys.path.append(os.path.abspath("src"))
 
+# Mock pyaudio before importing modules that rely on it
+sys.modules['pyaudio'] = MagicMock()
+sys.modules['openwakeword'] = MagicMock()
+sys.modules['openwakeword.model'] = MagicMock()
+sys.modules['assemblyai'] = MagicMock()
+
 class TestIntegration(unittest.TestCase):
 
     # Use patch.dict for sys.modules to mock hardware libs AND the audio_recorder module

@@ -10,3 +10,4 @@ scikit-learn
 tflite-runtime
 numpy
 Pillow
+assemblyai

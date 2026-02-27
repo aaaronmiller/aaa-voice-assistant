@@ -15,7 +15,7 @@ A robust, hands-free, cross-platform voice assistant designed for Windows, Linux
     *   **OpenAI Whisper API**: High accuracy cloud transcription.
 *   **Text-to-Speech (TTS)**:
     *   **System TTS**: Offline, low-latency using `pyttsx3`.
-    *   **Inworld AI**: High-quThisality emotional voices (API key required).
+    *   **Inworld AI**: High-quality emotional voices (API key required).
     *   **OpenAI TTS**: High-quality neural voices.
 *   **LLM Integration**:
     *   **OpenClaw**: Connect to a local autonomous agent instance.

@@ -111,7 +111,13 @@ class InworldTTSProvider(TTSProvider):
 
         except Exception as e:
             print(f"Inworld TTS Failed: {e}. Falling back to System TTS.")
-            return False
+            try:
+                # Instantiate SystemTTSProvider as fallback
+                fallback_tts = SystemTTSProvider()
+                return fallback_tts.speak(text)
+            except Exception as fallback_e:
+                print(f"Fallback to System TTS also failed: {fallback_e}")
+                return False
 
     def _play_audio_data(self, audio_data):
         # Save to temp file and play

@@ -1,1 +1,18 @@
+# Node
 node_modules
+
+# Python
+__pycache__/
+*.pyc
+ai-env/
+
+# Project-specific
+whisper.cpp/
+openwakeword_models/
+config.json
+memory/
+personas/
+transcript.md
+
+# Rust/Tauri build artifacts
+src-tauri/target/

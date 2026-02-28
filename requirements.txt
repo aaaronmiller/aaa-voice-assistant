@@ -1,0 +1,13 @@
+pyyaml
+requests
+pyaudio
+openwakeword
+keyboard
+pystray
+pyperclip
+pyttsx3
+scikit-learn
+tflite-runtime
+numpy
+Pillow
+assemblyai

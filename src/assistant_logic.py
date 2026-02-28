@@ -296,8 +296,14 @@ class Assistant:
             time.sleep(0.1)
             pyperclip.copy(old_clipboard)
             self.overlay.update_status("⌨️ Typed!", "green")
-            time.sleep(1)
-            self.overlay.update_status("💤 Idle", "#AAA")
+
+            def set_idle():
+                self.overlay.update_status("💤 Idle", "#888")
+
+            if getattr(self.overlay, 'root', None):
+                self.overlay.root.after(1000, set_idle)
+            else:
+                threading.Timer(1.0, set_idle).start()
         except Exception as e:
             print(f"Error typing text: {e}")
             self.overlay.update_status("❌ Error Typing", "red")

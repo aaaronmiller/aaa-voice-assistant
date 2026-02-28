@@ -3,6 +3,7 @@ import queue
 import time
 import requests
 import json
+import os
 import numpy as np
 import logging
 from .logger import log_error
@@ -70,10 +71,11 @@ class Assistant:
         # STT
         stt_type = config.get("stt_provider", "whisper_cpp")
         if stt_type == "whisper_cpp":
-            self.stt_provider = WhisperCPPProvider(
-                config.get("whisper_cpp_path", "whisper.cpp/build/bin/main"),
-                config.get("whisper_cpp_model_path", "whisper.cpp/models/ggml-base.bin")
-            )
+            # Values are populated by ConfigManager defaults if missing,
+            # but using OS env vars here adds a layer of portability.
+            whisper_path = config.get("whisper_cpp_path") or os.getenv("WHISPER_CPP_PATH", "whisper.cpp/build/bin/main")
+            whisper_model = config.get("whisper_cpp_model_path") or os.getenv("WHISPER_CPP_MODEL_PATH", "whisper.cpp/models/ggml-base.bin")
+            self.stt_provider = WhisperCPPProvider(whisper_path, whisper_model)
         elif stt_type == "assemblyai":
             self.stt_provider = AssemblyAIProvider(config.get("assemblyai_api_key", ""))
         elif stt_type == "openai":

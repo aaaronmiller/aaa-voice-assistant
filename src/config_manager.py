@@ -41,7 +41,7 @@ class ConfigManager:
 
     def _merge_config(self, default, user):
         for key, value in user.items():
-            if isinstance(value, dict) and key in default:
+            if isinstance(value, dict) and key in default and isinstance(default[key], dict):
                 self._merge_config(default[key], value)
             else:
                 default[key] = value

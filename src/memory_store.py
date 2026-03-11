@@ -80,12 +80,15 @@ class MemoryStore:
         # Would require embeddings (sentence-transformers) + vector store (chroma/faiss)
         # For now, simple keyword search
         results = []
+        query_lower = query.lower()
         try:
             with open(self.db_path, "r") as f:
                 for line in f:
+                    if query_lower not in line.lower():
+                        continue
                     try:
                         entry = json.loads(line)
-                        if query.lower() in entry["content"].lower():
+                        if query_lower in entry["content"].lower():
                             results.append(entry["content"])
                     except:
                         continue

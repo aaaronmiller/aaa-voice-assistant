@@ -71,5 +71,26 @@ class TestMemoryStore(unittest.TestCase):
         if os.path.exists("tests/memory.jsonl"):
             os.remove("tests/memory.jsonl")
 
+    def test_search_memory(self):
+        from src.memory_store import MemoryStore
+        ms = MemoryStore("tests/memory_search.jsonl")
+        ms.add_message("user", "Hello world", "sess1")
+        ms.add_message("assistant", "How can I help you today?", "sess1")
+        ms.add_message("user", "Tell me a joke", "sess1")
+
+        results = ms.search_memory("hello")
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], "Hello world")
+
+        results = ms.search_memory("HELP")
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], "How can I help you today?")
+
+        results = ms.search_memory("nonexistent")
+        self.assertEqual(len(results), 0)
+
+        if os.path.exists("tests/memory_search.jsonl"):
+            os.remove("tests/memory_search.jsonl")
+
 if __name__ == '__main__':
     unittest.main()

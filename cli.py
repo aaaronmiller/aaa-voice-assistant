@@ -1,7 +1,5 @@
 import argparse
-import sys
 import os
-import json
 from src.config_manager import ConfigManager
 from src.main import main as run_assistant
 from setup_assistant import main as run_setup

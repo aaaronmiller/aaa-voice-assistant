@@ -1,5 +1,12 @@
 # AAA Voice Assistant
 
+<p>
+<img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white">
+<img src="https://img.shields.io/badge/STT-Whisper.cpp-0ea5e9?style=flat-square">
+<img src="https://img.shields.io/badge/GPU-CUDA%20%C2%B7%20ROCm%20%C2%B7%20Metal%20%C2%B7%20OpenVINO-76B900?style=flat-square">
+<img src="https://img.shields.io/badge/Cross--Platform-Win%20%C2%B7%20Linux%20%C2%B7%20macOS-555?style=flat-square">
+</p>
+
 A robust, hands-free, cross-platform voice assistant designed for Windows, Linux, and macOS. It features wake word detection, optimized Speech-to-Text (using Whisper.cpp with GPU support), flexible Text-to-Speech options, and integration with powerful LLM backends including OpenClaw autonomous agents.
 
 ## 🚀 Features

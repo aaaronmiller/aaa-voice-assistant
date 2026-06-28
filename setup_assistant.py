@@ -51,7 +51,7 @@ def setup_whisper_cpp(gpu_type):
     model = "base"
     if platform.system() == "Windows":
         script = os.path.join("models", "download-ggml-model.cmd")
-        subprocess.check_call([script, model], shell=True)
+        subprocess.check_call(["cmd", "/c", script, model])
     else:
         script = os.path.join("models", "download-ggml-model.sh")
         subprocess.check_call(["bash", script, model])

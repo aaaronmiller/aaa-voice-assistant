@@ -11,10 +11,10 @@ pub enum ConfigError {
     #[error("Failed to parse config file: {0}")]
     ParseError(#[from] serde_json::Error),
     #[error("Failed to write config file: {0}")]
-    WriteError(#[from] std::io::Error),
+    WriteError(String),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct STTConfig {
     pub provider: String,
     pub fallback_providers: Vec<String>,
@@ -22,7 +22,7 @@ pub struct STTConfig {
     pub streaming: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TTSConfig {
     pub provider: String,
     pub voice: String,
@@ -30,7 +30,7 @@ pub struct TTSConfig {
     pub speed: f32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LLMConfig {
     pub provider: String,
     pub model: String,
@@ -38,7 +38,7 @@ pub struct LLMConfig {
     pub max_tokens: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HotkeyConfig {
     pub ptt: String,
     pub paste_last: String,
@@ -49,7 +49,7 @@ pub struct HotkeyConfig {
     pub cancel_recording: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AudioConfig {
     pub input_device: String,
     pub output_device: String,
@@ -58,7 +58,7 @@ pub struct AudioConfig {
     pub silence_threshold: f32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
     pub stt: STTConfig,
     pub tts: TTSConfig,
@@ -132,25 +132,46 @@ pub struct ConfigurationStore {
     config_path: PathBuf,
 }
 
+impl Default for ConfigurationStore {
+    fn default() -> Self {
+        let config_path = dirs::config_dir()
+            .map(|p| p.join("voice-assistant").join("config.json"))
+            .unwrap_or_else(|| PathBuf::from("config.json"));
+        Self {
+            settings: Settings::default(),
+            config_path,
+        }
+    }
+}
+
 impl ConfigurationStore {
     pub fn load() -> Result<Self, ConfigError> {
         let config_path = Self::get_config_path()?;
-        
+
         if config_path.exists() {
             let config_content = fs::read_to_string(&config_path)?;
             let settings = serde_json::from_str(&config_content)?;
-            Ok(Self { settings, config_path })
+            Ok(Self {
+                settings,
+                config_path,
+            })
         } else {
             let settings = Settings::default();
             fs::create_dir_all(config_path.parent().unwrap())?;
             fs::write(&config_path, serde_json::to_string_pretty(&settings)?)?;
-            Ok(Self { settings, config_path })
+            Ok(Self {
+                settings,
+                config_path,
+            })
         }
     }
 
     pub fn save(&self) -> Result<(), ConfigError> {
-        fs::write(&self.config_path, serde_json::to_string_pretty(&self.settings)?)?;
-        Ok(())
+        fs::write(
+            &self.config_path,
+            serde_json::to_string_pretty(&self.settings)?,
+        )
+        .map_err(|e| ConfigError::WriteError(e.to_string()))
     }
 
     pub fn get(&self) -> &Settings {
@@ -173,7 +194,7 @@ impl ConfigurationStore {
                 "Could not find config directory",
             ))
         })?;
-        
+
         config_dir.push("voice-assistant");
         Ok(config_dir.join("config.json"))
     }

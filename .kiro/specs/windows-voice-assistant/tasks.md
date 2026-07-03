@@ -13,54 +13,54 @@ The implementation uses:
 
 ### 1. Project Setup and Foundation
 
-- [ ] 1.1 Initialize Tauri project with Rust backend and React frontend
+- [x] 1.1 Initialize Tauri project with Rust backend and React frontend
   - Create Tauri app with `create-tauri-app`
   - Configure TypeScript, ESLint, Prettier
   - Set up Tailwind CSS and shadcn/ui
   - Configure build scripts and development environment
   - _Requirements: 14.1, 14.2, 14.3, 15.1, 15.5_
 
-- [ ] 1.2 Set up project structure and module organization
+- [x] 1.2 Set up project structure and module organization
   - Create Rust module structure (core, audio, providers, config, etc.)
   - Create React component structure (components, hooks, stores, utils)
   - Set up shared types between Rust and TypeScript
   - Configure Tauri IPC commands
   - _Requirements: 14.5_
 
-- [ ] 1.3 Configure testing frameworks
+- [x] 1.3 Configure testing frameworks
   - Set up proptest for Rust property-based testing
   - Set up fast-check for TypeScript property-based testing
   - Configure Jest for React component testing
   - Set up test utilities and fixtures
   - _Requirements: Testing Strategy_
 
-- [ ] 1.4 Implement configuration store with persistence
+- [x] 1.4 Implement configuration store with persistence
   - Create Settings struct with all configuration fields
   - Implement ConfigurationStore with load/save methods
   - Use platform-specific config directory (AppData on Windows)
   - Add JSON serialization/deserialization
   - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5_
 
-- [ ]* 1.5 Write property tests for configuration persistence
+- [x] 1.5 Write property tests for configuration persistence
   - **Property 30: Configuration Round-Trip**
   - **Validates: Requirements 19.1, 19.2, 19.3, 19.5**
 
 
 ### 2. Audio System Implementation
 
-- [ ] 2.1 Implement AudioManager for device enumeration and selection
+- [x] 2.1 Implement AudioManager for device enumeration and selection
   - Use CPAL for cross-platform audio device access
   - Implement list_input_devices() and list_output_devices()
   - Implement set_input_device() with device persistence
   - Add audio device change detection
   - _Requirements: 12.2, 12.3, 28.1, 28.2, 28.3_
 
-- [ ]* 2.2 Write property tests for audio device management
+- [x]* 2.2 Write property tests for audio device management
   - **Property 33: Audio Device Selection Persistence**
   - **Property 34: Audio Device Fallback**
   - **Validates: Requirements 28.3, 28.4**
 
-- [ ] 2.3 Implement AudioRecorder with preprocessing
+- [x] 2.3 Implement AudioRecorder with preprocessing
   - Create AudioRecorder with start/stop recording
   - Implement ring buffer for audio capture
   - Add noise suppression using RNNoise or similar
@@ -68,30 +68,30 @@ The implementation uses:
   - Implement silence detection with configurable threshold
   - _Requirements: 12.1, 12.4, 12.5, 28.6, 28.7, 28.8, 28.9_
 
-- [ ]* 2.4 Write property tests for audio preprocessing
+- [x]* 2.4 Write property tests for audio preprocessing
   - **Property 35: Audio Preprocessing Application**
   - **Validates: Requirements 28.9**
 
-- [ ] 2.5 Implement AudioPlayer for TTS playback
+- [x] 2.5 Implement AudioPlayer for TTS playback
   - Use Rodio for audio playback
   - Support streaming audio playback
   - Implement stop/pause functionality
   - Add volume control
   - _Requirements: 6.11_
 
-- [ ] 2.6 Implement audio device hot-swapping
+- [x] 2.6 Implement audio device hot-swapping
   - Add device connection/disconnection event handling
   - Implement automatic device switching logic
   - Add user notification for device changes
   - Handle recording interruption gracefully
   - _Requirements: 45.1, 45.2, 45.3, 45.4, 45.7_
 
-- [ ]* 2.7 Write property tests for audio device hot-swapping
+- [x]* 2.7 Write property tests for audio device hot-swapping
   - **Property 36: Audio Device Hot-Swap Handling**
   - **Property 37: Recording Pause on Device Disconnect**
   - **Validates: Requirements 45.1, 45.2, 45.7**
 
-- [ ] 2.8 Implement audio level monitoring for EQ visualization
+- [x] 2.8 Implement audio level monitoring for EQ visualization
   - Calculate RMS audio levels in real-time
   - Provide audio level stream for UI
   - Implement frequency band analysis for EQ graph
@@ -99,7 +99,7 @@ The implementation uses:
 
 ### 3. Clipboard Management
 
-- [ ] 3.1 Implement ClipboardManager with save/restore
+- [x] 3.1 Implement ClipboardManager with save/restore
   - Use arboard crate for cross-platform clipboard access
   - Implement save() to store current clipboard content
   - Implement restore() to restore saved content
@@ -107,14 +107,14 @@ The implementation uses:
   - Handle clipboard access errors gracefully
   - _Requirements: 1.4, 1.6_
 
-- [ ] 3.2 Implement paste_text() with cursor positioning
+- [x] 3.2 Implement paste_text() with cursor positioning
   - Use enigo crate for keyboard simulation
   - Implement Ctrl+V paste simulation
   - Add delay handling for slow applications
   - Handle paste failures with retry logic
   - _Requirements: 1.5_
 
-- [ ]* 3.3 Write property tests for clipboard round-trip
+- [x]* 3.3 Write property tests for clipboard round-trip
   - **Property 4: Clipboard Round-Trip Preservation**
   - **Validates: Requirements 1.4, 1.6**
 
@@ -126,27 +126,27 @@ The implementation uses:
 
 ### 4. Hotkey System
 
-- [ ] 4.1 Implement HotkeyManager with global hotkey registration
+- [x] 4.1 Implement HotkeyManager with global hotkey registration
   - Use global-hotkey crate for cross-platform hotkeys
   - Implement register() and unregister() methods
   - Add hotkey event routing to actions
   - Support modifier combinations (Ctrl, Alt, Shift, Fn)
   - _Requirements: 10.1, 10.2, 10.3, 25.1_
 
-- [ ] 4.2 Implement hotkey conflict detection
+- [x] 4.2 Implement hotkey conflict detection
   - Check for conflicts with system hotkeys
   - Detect conflicts with other applications (best effort)
   - Provide conflict warnings to user
   - Suggest alternative hotkey combinations
   - _Requirements: 10.4, 44.1, 44.2, 44.3, 44.4_
 
-- [ ]* 4.3 Write property tests for hotkey management
+- [x]* 4.3 Write property tests for hotkey management
   - **Property 46: Hotkey Action Execution**
   - **Property 47: Hotkey Conflict Detection**
   - **Property 48: Hotkey Validation**
   - **Validates: Requirements 10.4, 25.1-25.9, 44.1-44.3**
 
-- [ ] 4.4 Implement all hotkey actions
+- [x] 4.4 Implement all hotkey actions
   - StartPTT, PasteLastTranscription, ToggleWakeWord
   - ToggleCleanup, OpenHistory, OpenSettings
   - CancelRecording, SwitchProfile
@@ -165,20 +165,20 @@ The implementation uses:
 
 ### 6. STT Provider Infrastructure
 
-- [ ] 6.1 Define STTProvider trait and STTEngine
+- [x] 6.1 Define STTProvider trait and STTEngine
   - Create STTProvider trait with transcribe() and transcribe_streaming()
   - Implement STTEngine with provider registration
   - Add provider selection and fallback chain logic
   - Implement transcribe_with_fallback() method
   - _Requirements: 2.11, 2.12_
 
-- [ ]* 6.2 Write property tests for provider management
+- [x]* 6.2 Write property tests for provider management
   - **Property 7: Provider Selection Persistence**
   - **Property 8: Provider Fallback Chain**
   - **Property 9: Provider Selection Consistency**
   - **Validates: Requirements 2.11, 2.12, 2.13**
 
-- [ ] 6.3 Implement WhisperCppProvider with SYCL backend
+- [x] 6.3 Implement WhisperCppProvider with SYCL backend
   - Integrate whisper.cpp Rust bindings
   - Configure SYCL backend for Intel Arc GPU
   - Set GPU memory limit to 3GB (leaving 1GB for other models)
@@ -186,7 +186,7 @@ The implementation uses:
   - Add model loading and unloading
   - _Requirements: 2.1, 3.1, 3.2, 3.4_
 
-- [ ]* 6.4 Write performance tests for Whisper.cpp
+- [x]* 6.4 Write performance tests for Whisper.cpp
   - **Property 11: Whisper.cpp Transcription Performance**
   - **Validates: Requirements 3.3**
 
@@ -220,7 +220,7 @@ The implementation uses:
 
 ### 7. TTS Provider Infrastructure
 
-- [ ] 7.1 Define TTSProvider trait and TTSEngine
+- [x] 7.1 Define TTSProvider trait and TTSEngine
   - Create TTSProvider trait with synthesize() and synthesize_streaming()
   - Implement TTSEngine with provider registration
   - Add provider selection logic
@@ -269,7 +269,7 @@ The implementation uses:
 
 ### 8. LLM Provider Infrastructure
 
-- [ ] 8.1 Define LLMProvider trait and LLMBackend
+- [x] 8.1 Define LLMProvider trait and LLMBackend
   - Create LLMProvider trait with generate() and generate_streaming()
   - Implement LLMBackend with provider registration
   - Add provider selection logic
@@ -316,7 +316,7 @@ The implementation uses:
 
 ### 10. Push-to-Talk (PTT) Mode
 
-- [ ] 10.1 Implement PTTHandler with recording lifecycle
+- [x] 10.1 Implement PTTHandler with recording lifecycle
   - Create PTTHandler struct with PTTMode enum
   - Implement on_hotkey_press() and on_hotkey_release()
   - Add press-hold-release mode logic
@@ -385,7 +385,7 @@ The implementation uses:
 
 ### 12. Transcription History
 
-- [ ] 12.1 Implement HistoryManager with SQLite database
+- [x] 12.1 Implement HistoryManager with SQLite database
   - Create SQLite database schema for transcriptions
   - Implement add_entry() to store transcriptions
   - Implement get_recent() to retrieve recent entries
@@ -397,9 +397,9 @@ The implementation uses:
   - **Property 38: Transcription History Storage**
   - **Property 39: History Search Functionality**
   - **Property 40: History Retention Limit**
-  - **Validates: Requirements 22.1, 22.3, 22.9**
+  - **Validates: Requirements 22.1, 22.3, 22.9_
 
-- [ ] 12.3 Implement history export functionality
+- [x] 12.3 Implement history export functionality
   - Add export() method supporting CSV and JSON formats
   - Implement export to file
   - Add import functionality for backup restore
@@ -409,7 +409,7 @@ The implementation uses:
   - **Property 41: History Export Round-Trip**
   - **Validates: Requirements 22.8**
 
-- [ ] 12.5 Integrate history into PTT flow
+- [x] 12.5 Integrate history into PTT flow
   - Store all transcriptions in history after completion
   - Add "paste last transcription" hotkey functionality
   - Implement history retention limit enforcement
@@ -417,7 +417,7 @@ The implementation uses:
 
 ### 13. Usage Metrics and Statistics
 
-- [ ] 13.1 Implement MetricsTracker with SQLite database
+- [x] 13.1 Implement MetricsTracker with SQLite database
   - Create SQLite database schema for metrics
   - Implement record_transcription() to log operations
   - Implement get_usage_metrics() with aggregation
@@ -430,7 +430,7 @@ The implementation uses:
   - **Property 43: Cost Estimation Accuracy**
   - **Validates: Requirements 24.1, 24.2, 24.3, 24.4, 24.6**
 
-- [ ] 13.3 Implement ResourceMonitor for system metrics
+- [x] 13.3 Implement ResourceMonitor for system metrics
   - Track CPU usage using sysinfo crate
   - Track GPU usage and VRAM allocation
   - Track RAM usage

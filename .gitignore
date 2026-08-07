@@ -1,18 +1,56 @@
 # Node
-node_modules
+node_modules/
+dist/
+build/
 
 # Python
 __pycache__/
 *.pyc
+*.pyo
 ai-env/
+venv/
+.venv/
+
+# Rust/Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/
+
+# OS/Editor junk
+*.Zone.Identifier
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Archives
+*.7z
+*.zip
+*.tar.gz
+
+# Secrets/env
+.env
+.env.*
+config.json
+secrets/
 
 # Project-specific
 whisper.cpp/
 openwakeword_models/
-config.json
 memory/
 personas/
 transcript.md
+telemetry-id
+*.log
 
-# Rust/Tauri build artifacts
-src-tauri/target/
+# IDE
+.vscode/settings.json
+
+# .kiro/ and .jules/ are deliberately NOT ignored. They hold the Windows voice
+# assistant specification (requirements, design, tasks) and prior session
+# findings — 60K of design.md alone. Ignoring them staged 30,377 deletions
+# while the files stayed on disk, so a commit would have erased the specs from
+# history while everything still looked present locally.
+
+# Lock files (using pnpm)
+package-lock.json

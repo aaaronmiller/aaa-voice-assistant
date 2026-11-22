@@ -4,6 +4,30 @@ from threading import Thread
 import time
 import logging
 
+import os
+
+def play_beep():
+    """Play a simple beep sound for feedback."""
+    system = os.name
+    if system == 'posix':
+        # Linux/Mac: try system beep or bell
+        try:
+            # Terminal bell
+            print('\a')
+            # Also try paplay/beep if available
+            if os.system('which paplay > /dev/null 2>&1') == 0:
+                os.system('paplay /usr/share/sounds/freedesktop/stereo/bell.oga 2>/dev/null &')
+            elif os.system('which beep > /dev/null 2>&1') == 0:
+                os.system('beep -f 1000 -l 50 2>/dev/null &')
+        except:
+            pass
+    elif system == 'nt':
+        try:
+            import winsound
+            winsound.Beep(1000, 50)
+        except:
+            pass
+
 class OverlayWindow:
     def __init__(self, font_size=14):
         self.root = None
@@ -20,6 +44,8 @@ class OverlayWindow:
         self.root.attributes("-topmost", True)
         self.root.attributes("-alpha", 0.7) # Slightly transparent
 
+
+        try:
             screen_width = self.root.winfo_screenwidth()
             screen_height = self.root.winfo_screenheight()
 

@@ -22,12 +22,17 @@ class ConfigManager:
                 "openai": os.getenv("OPENAI_API_KEY", ""),
                 "anthropic": os.getenv("ANTHROPIC_API_KEY", ""),
                 "assemblyai": os.getenv("ASSEMBLYAI_API_KEY", ""),
-                "inworld": os.getenv("INWORLD_API_KEY", "")
+                "inworld": os.getenv("INWORLD_API_KEY", ""),
+                "deepgram": os.getenv("DEEPGRAM_API_KEY", ""),
             },
+            "deepgram_model": "nova-3",
+            "deepgram_language": "en",
             "whisper_cpp_path": "whisper.cpp/build/bin/main", # Standard path
             "whisper_cpp_model_path": "whisper.cpp/models/ggml-base.bin",
             "openclaw_url": "http://localhost:18789/v1/chat/completions",
-            "persona": "default"
+            "persona": "default",
+            "breakboard_enabled": False,
+            "breakboard_key": "f12",
         }
 
     def _load_user_config(self):
@@ -41,11 +46,14 @@ class ConfigManager:
 
     def _merge_config(self, default, user):
         for key, value in user.items():
-            if isinstance(value, dict) and key in default and isinstance(default[key], dict):
+            if (
+                isinstance(value, dict)
+                and key in default
+                and isinstance(default[key], dict)
+            ):
                 self._merge_config(default[key], value)
             else:
                 default[key] = value
-
     def _detect_system_settings(self):
         # Adjust paths based on OS
         system = platform.system()

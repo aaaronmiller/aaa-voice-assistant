@@ -8,6 +8,7 @@ import io
 import wave
 import tempfile
 import logging
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -127,4 +128,46 @@ class OpenAIAPIProvider(STTProvider):
             return response.json()["text"]
         except Exception as e:
             logger.error(f"OpenAI STT Error: {e}")
+            return ""
+
+
+class DeepgramProvider(STTProvider):
+    def __init__(
+        self, api_key, model="nova-3", language="en", smart_format=True, punctuate=True
+    ):
+        self.api_key = api_key
+        self.model = model
+        self.language = language
+        self.smart_format = smart_format
+        self.punctuate = punctuate
+
+    def transcribe(self, audio_data):
+        # Convert numpy array to WAV bytes
+        buffer = io.BytesIO()
+        with wave.open(buffer, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(16000)
+            wf.writeframes(audio_data.tobytes())
+        buffer.seek(0)
+
+        url = f"https://api.deepgram.com/v1/listen?model={self.model}&language={self.language}&smart_format={str(self.smart_format).lower()}&punctuate={str(self.punctuate).lower()}"
+        headers = {
+            "Authorization": f"Token {self.api_key}",
+            "Content-Type": "audio/wav",
+        }
+
+        try:
+            response = httpx.post(
+                url, headers=headers, content=buffer.read(), timeout=30
+            )
+            response.raise_for_status()
+            result = response.json()
+            return (
+                result.get("channel", {})
+                .get("alternatives", [{}])[0]
+                .get("transcript", "")
+            )
+        except Exception as e:
+            logger.error(f"Deepgram STT Error: {e}")
             return ""

@@ -20,12 +20,18 @@ except ImportError:
     pyperclip = None
 
 from .wake_word import WakeWordDetector
-from .stt_service import WhisperCPPProvider, AssemblyAIProvider, OpenAIAPIProvider
+from .stt_service import (
+    WhisperCPPProvider,
+    AssemblyAIProvider,
+    OpenAIAPIProvider,
+    DeepgramProvider,
+)
 from .tts_service import InworldTTSProvider, SystemTTSProvider, OpenAITTSProvider
 from .llm_service import LLMService
 from .overlay import OverlayWindow, play_beep
 from .persona_manager import PersonaManager
 from .memory_store import MemoryStore
+from .breakboard import BreakboardListener, is_breakboard_available
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +74,13 @@ class Assistant:
             logger.error(f"Wake Word Detector init failed: {e}")
             self.wake_word_detector = None
 
+        # Breakboard (physical interrupt button)
+        self.enabled = True
+        self.breakboard_listener = None
+        if config.get("breakboard_enabled", False) and is_breakboard_available():
+            self.breakboard_listener = BreakboardListener(config.get("breakboard_key", "f12"), self._handle_breakboard_interrupt)
+            self.breakboard_listener.start()
+
         # STT
         stt_type = config.get("stt_provider", "whisper_cpp")
         if stt_type == "whisper_cpp":
@@ -80,6 +93,12 @@ class Assistant:
             self.stt_provider = AssemblyAIProvider(config.get("assemblyai_api_key", ""))
         elif stt_type == "openai":
             self.stt_provider = OpenAIAPIProvider(config.get("api_keys", {}).get("openai"))
+        elif stt_type == "deepgram":
+            self.stt_provider = DeepgramProvider(
+                config.get("deepgram_api_key") or config.get("api_keys", {}).get("deepgram", ""),
+                model=config.get("deepgram_model", "nova-3"),
+                language=config.get("deepgram_language", "en"),
+            )
         else:
             self.stt_provider = None
             logger.warning("No STT provider configured.")
@@ -87,9 +106,14 @@ class Assistant:
         # TTS
         tts_type = config.get("tts_provider", "system")
         if tts_type == "inworld":
-            self.tts_provider = InworldTTSProvider(config.get("inworld_api_key", ""), config.get("inworld_api_secret", ""))
+            self.tts_provider = InworldTTSProvider(
+                config.get("inworld_api_key", ""), config.get("inworld_api_secret", "")
+            )
         elif tts_type == "openai":
-            self.tts_provider = OpenAITTSProvider(config.get("api_keys", {}).get("openai"), config.get("voice_id", "alloy"))
+            self.tts_provider = OpenAITTSProvider(
+                config.get("api_keys", {}).get("openai"),
+                config.get("voice_id", "alloy"),
+            )
         else:
             self.tts_provider = SystemTTSProvider(config.get("voice_id"))
 
@@ -130,6 +154,8 @@ class Assistant:
         self.running = False
         if self.audio_recorder:
             self.audio_recorder.stop_stream()
+        if self.breakboard_listener:
+            self.breakboard_listener.stop()
         self.overlay.stop()
         logger.info("Assistant stopped.")
 
@@ -142,6 +168,10 @@ class Assistant:
 
     def _wake_word_loop(self):
         while self.running:
+            if not self.enabled:
+                time.sleep(0.1)
+                continue
+
             if not self.audio_recorder:
                 time.sleep(1)
                 continue
@@ -192,6 +222,9 @@ class Assistant:
                     self.audio_buffer.append(audio_chunk)
 
     def _handle_ptt_press(self):
+        if not self.enabled:
+            return
+
         with self.lock:
             if not self.recording_for_stt:
                 print("PTT Pressed - Recording...")
@@ -200,6 +233,9 @@ class Assistant:
                 self.audio_buffer = []
 
     def _handle_ptt_release(self, event):
+        if not self.enabled:
+            return
+
         with self.lock:
             was_recording = self.recording_for_stt
             if was_recording:
@@ -211,6 +247,9 @@ class Assistant:
              self._process_audio_buffer(mode="type")
 
     def _toggle_listening(self, force_start=False, force_stop=False):
+        if not self.enabled and not force_start:
+            return
+
         should_process = False
 
         with self.lock:
@@ -325,3 +364,20 @@ class Assistant:
         # Speak response
         self.tts_provider.speak(response_text)
         self.overlay.update_status("💤 Idle", "#AAA")
+
+    def _handle_breakboard_interrupt(self):
+        """Toggle assistant enabled state when breakboard button is pressed."""
+        with self.lock:
+            self.enabled = not self.enabled
+
+        if self.enabled:
+            self.overlay.update_status("Enabled", "#0A0")
+            logger.info("Assistant enabled via breakboard")
+        else:
+            self.overlay.update_status("Disabled (Breakboard)", "#F00")
+            # Stop any active listening/recording
+            if self.listening:
+                self._toggle_listening(force_stop=True)
+            if self.recording_for_stt:
+                self.recording_for_stt = False
+            logger.info("Assistant disabled via breakboard")

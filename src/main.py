@@ -7,9 +7,9 @@ import time
 # Add src to path if needed (but running as module `python -m src.main` handles it)
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from assistant_logic import Assistant
-from gui import TrayIcon
-from config_manager import ConfigManager
+from .assistant_logic import Assistant
+from .gui import TrayIcon
+from .config_manager import ConfigManager
 
 def main():
     print("Initializing AAA Voice Assistant...")
